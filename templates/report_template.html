@@ -7,7 +7,7 @@
     <style>
         /* --- Estilos para Encabezado y Pie de Página --- */
         #page-header, #page-footer {
-            position: running(header_footer); /* WeasyPrint usa esto para capturar el elemento */
+            position: running(header_footer);
             font-size: 9px;
             color: #4a5568;
             width: 100%;
@@ -25,14 +25,15 @@
         @page {
             {% if report_type == 'medidas' %}
             size: letter landscape;
+            margin: 2.5cm 1.5cm;
             {% else %}
             size: letter;
+            margin: 2.5cm 1.5cm;
             {% endif %}
-            /* Eliminamos márgenes laterales y los controlamos con padding en el body */
-            margin: 2.5cm 0; 
 
             @top-center {
                 content: element(header_footer);
+                width: 100%;
             }
             @bottom-right {
                 content: "Página " counter(page) " de " counter(pages);
@@ -40,13 +41,24 @@
                 color: #4a5568;
             }
         }
+        
         body {
             font-family: 'Helvetica', 'Arial', sans-serif;
-            /* Añadimos padding para simular los márgenes laterales */
-            padding: 0 1.5cm; 
+            padding: 0;
+            margin: 0;
             font-size: 10px;
             color: #333;
         }
+
+        /* Contenedor principal con márgenes */
+        .main-content {
+            {% if report_type == 'medidas' %}
+            padding: 0;
+            {% else %}
+            padding: 0;
+            {% endif %}
+        }
+
         h1, h2, h3 {
             font-family: 'Helvetica Neue', 'Arial', sans-serif;
             color: #1a202c;
@@ -128,6 +140,30 @@
             display: none;
         }
 
+        /* Estilos específicos para el encabezado en landscape */
+        {% if report_type == 'medidas' %}
+        #page-header table {
+            width: 100%;
+            table-layout: fixed;
+        }
+        
+        #page-header td {
+            vertical-align: middle;
+        }
+        
+        #page-header td:first-child {
+            width: 15%;
+        }
+        
+        #page-header td:nth-child(2) {
+            width: 70%;
+        }
+        
+        #page-header td:last-child {
+            width: 15%;
+        }
+        {% endif %}
+
     </style>
 </head>
 <body>
@@ -136,16 +172,16 @@
         <table style="width: 100%; border-collapse: collapse; border: 1px solid #999;">
             <tr>
                 <!-- Columna Izquierda: Logo -->
-                <td style="width: 20%; border: 1px solid #999; padding: 5px; text-align: center; vertical-align: middle;">
-                    <img src="{{ base_url }}static/img/logo.png" style="height: 40px; display: inline-block;"/>
+                <td style="width: 15%; border: 1px solid #999; padding: 5px; text-align: center; vertical-align: middle;">
+                    <img src="{{ base_url }}static/img/logo.png" style="height: 40px; max-width: 100%; display: inline-block;"/>
                 </td>
                 <!-- Columna Central: Título -->
-                <td style="width: 60%; border: 1px solid #999; padding: 5px; text-align: center; vertical-align: middle;">
+                <td style="width: 70%; border: 1px solid #999; padding: 5px; text-align: center; vertical-align: middle;">
                     <div style="font-size: 14px; font-weight: bold;">CALBREX TECHNOLOGIES</div>
                     <div style="font-size: 10px;">TOMA DE DATOS VOLUMEN</div>
                 </td>
                 <!-- Columna Derecha: Información -->
-                <td style="width: 20%; border: 1px solid #999; padding: 5px; font-size: 8px; line-height: 1.4; text-align: center; vertical-align: middle;">
+                <td style="width: 15%; border: 1px solid #999; padding: 5px; font-size: 8px; line-height: 1.4; text-align: center; vertical-align: middle;">
                     <div><strong>CAL-FORT-01-01</strong></div>
                     <div>Versión 00</div>
                     <div>Fecha de aplicación: 06-05-2025</div>
@@ -155,8 +191,10 @@
         </table>
     </div>
 
-    <!-- Aquí se inyectará el contenido de los reportes -->
-    {{ content_html|safe }}
+    <!-- Contenedor principal del contenido -->
+    <div class="main-content">
+        {{ content_html|safe }}
+    </div>
 
 </body>
 </html>

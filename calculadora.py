@@ -162,8 +162,9 @@ def generar_textos_reporte(entradas_generales, resultados_aforos, especificacion
     # Obtener la lista de mantenimientos realizados
     mantenimientos_realizados = entradas_generales.get('mantenimientos', [])
 
-    # Obtener las notas y observaciones para el certificado
-    notas_certificado = site_config.get('notas_observaciones_certificado', [])
+    # Incluir todas las entradas generales para que estén disponibles en el frontend
+    # para la construcción de la cabecera del reporte de medidas.
+    textos_reporte = {"entradas_generales": eg}
 
     return {
         "introduccion": texto_intro,
@@ -176,7 +177,8 @@ def generar_textos_reporte(entradas_generales, resultados_aforos, especificacion
         "trazabilidad_nacional": trazabilidad_nacional,
         "procedimiento_utilizado": procedimiento_utilizado,
         "mantenimientos": mantenimientos_realizados,
-        "notas_certificado": notas_certificado,
+        "entradas_generales": eg,
+        "notas_certificado": site_config.get('notas_observaciones_certificado', []),
         "unidades": eg.get('unidades', 'µL')
     }
 

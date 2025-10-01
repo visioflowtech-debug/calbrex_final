@@ -267,17 +267,34 @@ function collectFormData() {
             alpha_material_pp: 0.00024, rho_pesa_n74: 8000,
         },
         entradas_generales: {
+            // Datos del cliente y servicio
+            nombre_cliente: document.getElementById('nombre_cliente').value,
+            fecha_recepcion: document.getElementById('fecha_recepcion').value,
+            fecha_calibracion: document.getElementById('fecha_calibracion').value,
+            numero_servicio: document.getElementById('numero_servicio').value,
+            numero_certificado: document.getElementById('numero_certificado').value,
+            // Datos del instrumento
             descripcion_instrumento: document.getElementById('descripcion_instrumento').value,
             marca_instrumento: document.getElementById('marca_instrumento').value,
             modelo_instrumento: document.getElementById('modelo_instrumento').value,
             serie_instrumento: document.getElementById('serie_instrumento').value,
             id_instrumento: document.getElementById('id_instrumento').value,
+            vol_nominal: parseFloat(document.getElementById('vol_nominal').value) || 0,
             unidades: document.getElementById('unidades').value,
+            material: document.getElementById('material').value,
+            clase_instrumento: document.getElementById('clase_instrumento').value,
             tipo_instrumento: document.getElementById('tipo_instrumento').value,
             tipo_volumen: document.getElementById('tipo_volumen').value,
             tipo_calibracion: document.getElementById('tipo_calibracion').value,
             ajuste_realizado: document.getElementById('ajuste_realizado').value,
             div_min_valor: parseFloat(document.getElementById('div_min_valor').value) || 0, // <-- AÑADIDO
+            div_min_unidad: document.getElementById('div_min_unidad').value,
+            tolerancia: document.getElementById('tolerancia').value,
+            cuello_instrumento: document.getElementById('cuello_instrumento').value,
+            t_descarga: document.getElementById('t_descarga').value,
+            puntas_valor: document.getElementById('puntas_valor').value,
+            puntas_unidad: document.getElementById('puntas_unidad').value,
+            limpieza: document.getElementById('limpieza').value,
             patron_seleccionado: document.getElementById('patron_seleccionado').value,
             auxiliar_ta: document.getElementById('auxiliar_ta').value,
             auxiliar_ca: document.getElementById('auxiliar_ca').value,
@@ -424,10 +441,10 @@ async function handleExportPdf(reportType) {
     // Extraer el contenido HTML de los reportes generados
     const serviceReportHtml = document.getElementById('results-container').innerHTML;
     const certificateHtml = document.getElementById('certificate-container').innerHTML;
-    // Generar el HTML específico para el reporte de "Medidas"
-    const medidasHtml = document.getElementById('mediciones-detalladas-tabla')?.outerHTML || 'No hay datos de mediciones.';
+    // Extraer el HTML del reporte de "Medidas" (que ahora incluye el encabezado y la tabla)
+    const medidasHtml = document.getElementById('medidas-report-container')?.innerHTML || 'No hay datos de mediciones.';
 
-    if (!serviceReportHtml || !certificateHtml || !medidasHtml) {
+    if (!serviceReportHtml || !certificateHtml || !medidasHtml.includes('table')) {
         statusMsg.textContent = 'Error: Genere un reporte primero antes de exportar.';
         statusMsg.className = 'text-sm font-medium text-red-600';
         return;
@@ -487,11 +504,62 @@ async function handleExportPdf(reportType) {
     }
 }
 
+function buildMedidasHeader(results) {
+    const eg = results.textos_reporte.entradas_generales;
+    const aforos = results.aforos;
+
+    // Formatear fechas
+    const formatDate = (dateString) => {
+        if (!dateString) return 'N/A';
+        const date = new Date(dateString + 'T00:00:00'); // Asegurar que se interprete como fecha local
+        return date.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    };
+
+    return `
+    <div>
+        <table class="w-full border-collapse text-xs" style="border: 1px solid #999;">
+            <tbody>
+                <tr>
+                    <!-- Columna Izquierda con datos del instrumento -->
+                    <td class="p-1 align-top" style="width: 75%; border: 1px solid #999;">
+                        <table class="w-full" style="border: none;">
+                            <tr style="border: none;"><td class="font-bold pr-2" style="border: none;">CLIENTE</td><td style="border: none;">${eg.nombre_cliente || ''}</td><td class="font-bold px-2" style="border: none;">FECHA REC.</td><td style="border: none;">${formatDate(eg.fecha_recepcion)}</td></tr>
+                            <tr style="border: none;"><td class="font-bold pr-2" style="border: none;">INSTRUMENTO</td><td style="border: none;">${eg.descripcion_instrumento || ''}</td><td class="font-bold px-2" style="border: none;">TIPO</td><td style="border: none;">${eg.tipo_instrumento || ''}</td><td class="font-bold px-2" style="border: none;">FECHA CAL.</td><td style="border: none;">${formatDate(eg.fecha_calibracion)}</td></tr>
+                            <tr style="border: none;"><td class="font-bold pr-2" style="border: none;">MARCA</td><td style="border: none;">${eg.marca_instrumento || ''}</td><td class="font-bold px-2" style="border: none;">VOL. NOMI.</td><td style="border: none;">${eg.vol_nominal || ''}</td><td class="font-bold px-2" style="border: none;">VOLUMEN</td><td style="border: none;">${eg.tipo_volumen || ''}</td><td class="font-bold px-2" style="border: none;">Ɵ CUELLO:</td><td style="border: none;">${eg.cuello_instrumento || 'N.A.'}</td></tr>
+                            <tr style="border: none;"><td class="font-bold pr-2" style="border: none;">MODELO</td><td style="border: none;">${eg.modelo_instrumento || ''}</td><td class="font-bold px-2" style="border: none;">UNIDAD</td><td style="border: none;">${eg.unidades || ''}</td><td class="font-bold px-2" style="border: none;">T. DESCARGA</td><td style="border: none;">${eg.t_descarga || 'N.A.'}</td><td class="font-bold px-2" style="border: none;">PUNTAS</td><td style="border: none;">${eg.puntas_valor || ''} ${eg.puntas_unidad || ''}</td></tr>
+                            <tr style="border: none;"><td class="font-bold pr-2" style="border: none;">SERIE</td><td style="border: none;">${eg.serie_instrumento || ''}</td><td class="font-bold px-2" style="border: none;">CLASE</td><td style="border: none;">${eg.clase_instrumento || 'N.A.'}</td><td class="font-bold px-2" style="border: none;">DIV. MÍN.</td><td style="border: none;">${eg.div_min_valor || ''} ${eg.div_min_unidad || ''}</td><td class="font-bold px-2" style="border: none;">TOLERANCIA</td><td style="border: none;">${eg.tolerancia || 'N.A.'}</td></tr>
+                            <tr style="border: none;"><td class="font-bold pr-2" style="border: none;">ID</td><td style="border: none;">${eg.id_instrumento || ''}</td><td class="font-bold px-2" style="border: none;">CALIBRADO PARA</td><td style="border: none;">${eg.tipo_calibracion || ''}</td><td class="font-bold px-2" style="border: none;">MATERIAL</td><td style="border: none;">${eg.material || ''}</td><td class="font-bold px-2" style="border: none;">RESOLUCIÓN</td><td style="border: none;">${eg.div_min_valor || ''} ${eg.div_min_unidad || ''}</td></tr>
+                        </table>
+                    </td>
+                    <!-- Columna Derecha con datos del servicio -->
+                    <td class="p-1 align-top" style="width: 25%; border: 1px solid #999;">
+                        <table class="w-full" style="border: none;">
+                            <tr style="border: none;"><td class="font-bold pr-2" style="border: none;">SERVICIO</td><td style="border: none;">${eg.numero_servicio || ''}</td></tr>
+                            <tr style="border: none;"><td class="font-bold pr-2" style="border: none;">CERTIFICADO</td><td style="border: none;">${eg.numero_certificado || ''}</td></tr>
+                            <tr style="border: none;"><td class="font-bold pr-2" style="border: none;">PATRÓN</td><td style="border: none;">${eg.patron_seleccionado || ''}</td></tr>
+                            <tr style="border: none;"><td class="font-bold pr-2" style="border: none;">AUXILIAR TA</td><td style="border: none;">${eg.auxiliar_ta || ''}</td></tr>
+                            <tr style="border: none;"><td class="font-bold pr-2" style="border: none;">AUXILIAR CA</td><td style="border: none;">${eg.auxiliar_ca || ''}</td></tr>
+                            <tr style="border: none;"><td class="font-bold pr-2" style="border: none;">LIMPIEZA</td><td style="border: none;">${eg.limpieza || ''}</td></tr>
+                        </table>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    `;
+}
+
 function displayResults(results) {
     const serviceReportContainer = document.getElementById('results-container');
     const certificateContainer = document.getElementById('certificate-container');
     const unidades = results.textos_reporte.unidades || 'µL';
     
+    // Crear un contenedor específico para el reporte de medidas
+    const medidasReportContainer = document.createElement('div');
+    medidasReportContainer.id = 'medidas-report-container';
+    medidasReportContainer.style.display = 'none'; // Oculto, solo para la exportación
+    document.body.appendChild(medidasReportContainer);
+
     let html = `
         <section class="bg-white p-6 rounded-lg shadow-md border border-gray-200">
             <h1 class="text-xl font-semibold mb-4 border-b pb-2">Reporte de Servicio</h1>
@@ -644,6 +712,10 @@ function displayResults(results) {
 
     serviceReportContainer.innerHTML = html;
     serviceReportContainer.classList.remove('hidden');
+
+    // Construir el contenido del reporte de Medidas
+    const medidasHeaderHtml = buildMedidasHeader(results);
+    medidasReportContainer.innerHTML = medidasHeaderHtml + document.getElementById('mediciones-detalladas-tabla').outerHTML;
 
     // --- Generar el contenido del Certificado ---
     // Por ahora, solo un marcador de posición.
