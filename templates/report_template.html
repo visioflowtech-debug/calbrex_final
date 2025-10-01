@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <title>Reporte de Calibración</title>
+    <style>
+        /* --- Estilos para Encabezado y Pie de Página --- */
+        #page-header, #page-footer {
+            position: running(header_footer); /* WeasyPrint usa esto para capturar el elemento */
+            font-size: 9px;
+            color: #4a5568;
+            width: 100%;
+        }
+
+        #page-footer .page-number:after {
+            content: counter(page);
+        }
+
+        #page-footer .page-count:after {
+            content: counter(pages);
+        }
+
+        /* Estilos generales para el PDF */
+        @page {
+            {% if report_type == 'medidas' %}
+            size: letter landscape;
+            {% else %}
+            size: letter;
+            {% endif %}
+            /* Eliminamos márgenes laterales y los controlamos con padding en el body */
+            margin: 2.5cm 0; 
+
+            @top-center {
+                content: element(header_footer);
+            }
+            @bottom-right {
+                content: "Página " counter(page) " de " counter(pages);
+                font-size: 9px;
+                color: #4a5568;
+            }
+        }
+        body {
+            font-family: 'Helvetica', 'Arial', sans-serif;
+            /* Añadimos padding para simular los márgenes laterales */
+            padding: 0 1.5cm; 
+            font-size: 10px;
+            color: #333;
+        }
+        h1, h2, h3 {
+            font-family: 'Helvetica Neue', 'Arial', sans-serif;
+            color: #1a202c;
+            margin-top: 1.5em;
+            margin-bottom: 0.5em;
+        }
+        h1 { font-size: 20px; text-align: center; border-bottom: 2px solid #4a5568; padding-bottom: 5px; }
+        h2 { font-size: 16px; border-bottom: 1px solid #718096; padding-bottom: 3px; }
+        h3 { font-size: 12px; font-weight: bold; }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1em;
+            margin-bottom: 1em;
+        }
+        th, td {
+            border: 1px solid #cbd5e0;
+            padding: 5px;
+            text-align: left;
+            vertical-align: top;
+        }
+        th {
+            background-color: #edf2f7;
+            font-weight: bold;
+            font-size: 9px;
+            text-transform: uppercase;
+        }
+        .text-center { text-align: center; }
+        .font-bold { font-weight: bold; }
+        .text-green { color: #2f855a; }
+        .text-red { color: #c53030; }
+        .text-blue { color: #2b6cb0; }
+
+        /* Clases para controlar saltos de página */
+        .page-break {
+            page-break-before: always;
+        }
+
+        /* Contenedores de secciones */
+        .section-box {
+            border: 1px solid #e2e8f0;
+            background-color: #f7fafc;
+            padding: 10px;
+            margin-top: 1em;
+            border-radius: 5px;
+        }
+        .section-box p {
+            margin: 0.5em 0;
+        }
+        .section-box ul {
+            margin-left: 20px;
+        }
+
+        /* Párrafos con estilo especial */
+        .intro-paragraph {
+            border-left: 3px solid #4299e1;
+            background-color: #ebf8ff;
+            padding: 10px;
+            margin-top: 1em;
+        }
+
+        /* Estilos para las notas */
+        .notes-section {
+            font-size: 8px;
+            color: #4a5568;
+        }
+        .notes-section p {
+            margin: 0.3em 0;
+        }
+        .notes-section .border-top {
+            border-top: 1px solid #e2e8f0;
+            padding-top: 0.5em;
+            margin-top: 0.5em;
+        }
+
+        /* No mostrar gráficos en el PDF por ahora */
+        .chart-container {
+            display: none;
+        }
+
+    </style>
+</head>
+<body>
+    <!-- Elemento para el Encabezado (WeasyPrint lo tomará de aquí) -->
+    <div id="page-header">
+        <table style="width: 100%; border-collapse: collapse; border: 1px solid #999;">
+            <tr>
+                <!-- Columna Izquierda: Logo -->
+                <td style="width: 20%; border: 1px solid #999; padding: 5px; text-align: center; vertical-align: middle;">
+                    <img src="{{ base_url }}static/img/logo.png" style="height: 40px; display: inline-block;"/>
+                </td>
+                <!-- Columna Central: Título -->
+                <td style="width: 60%; border: 1px solid #999; padding: 5px; text-align: center; vertical-align: middle;">
+                    <div style="font-size: 14px; font-weight: bold;">CALBREX TECHNOLOGIES</div>
+                    <div style="font-size: 10px;">TOMA DE DATOS VOLUMEN</div>
+                </td>
+                <!-- Columna Derecha: Información -->
+                <td style="width: 20%; border: 1px solid #999; padding: 5px; font-size: 8px; line-height: 1.4; text-align: center; vertical-align: middle;">
+                    <div><strong>CAL-FORT-01-01</strong></div>
+                    <div>Versión 00</div>
+                    <div>Fecha de aplicación: 06-05-2025</div>
+                    <div>Pág. 1 de 1</div>
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <!-- Aquí se inyectará el contenido de los reportes -->
+    {{ content_html|safe }}
+
+</body>
+</html>
