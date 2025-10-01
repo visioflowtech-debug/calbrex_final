@@ -1,0 +1,16 @@
+{
+    "default": [
+        { "alcance_ul": 1, "emt_ul": 0.025 },
+        { "alcance_ul": 2, "emt_ul": 0.050 },
+        { "alcance_ul": 5, "emt_ul": 0.125 },
+        { "alcance_ul": 10, "emt_ul": 0.120 },
+        { "alcance_ul": 20, "emt_ul": 0.200 },
+        { "alcance_ul": 50, "emt_ul": 0.500 },
+        { "alcance_ul": 100, "emt_ul": 0.800 },
+        { "alcance_ul": 200, "emt_ul": 1.600 },
+        { "alcance_ul": 500, "emt_ul": 4.000 },
+        { "alcance_ul": 1000, "emt_ul": 8.000 },
+        { "alcance_ul": 5000, "emt_ul": 40.000 },
+        { "alcance_ul": 10000, "emt_ul": 60.000 }
+    ]
+}

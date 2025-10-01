@@ -1,0 +1,14 @@
+{
+    "lugar_servicio": "Laboratorio de Volumen de CALBREX TECHNOLOGIES, S.A. DE C.V.",
+    "trazabilidad_metrologica_nacional": "Patrón Nacional de Masa \"Prototipo No. 21\", mantenido por el CENAM",
+    "procedimiento_utilizado": "CAL-PROT-01 \"Calibración de instrumentos volumétricos por el Método Gravimétrico\"",
+    "notas_observaciones_certificado": [
+        "Los resultados se obtuvieron del promedio de 10 mediciones aplicando todas las correcciones correspondientes a la medición. Las incertidumbres de medida declaradas en este informe son expresadas para un factor de cobertura k=2 y un nivel de confianza de al menos del 95% siendo evaluadas en base a la: Guía para la Expresión de la Incertidumbre en las Mediciones, NMX-CH-140-IMNC-2002.",
+        "El siguiente informe solo ampara las mediciones reportadas en el momento, condiciones ambientales y de uso en que se realizó esta calibración.",
+        "Se utiliza como documento de referencia la \"Guía técnica sobre trazabilidad metrológica e incertidumbre de medida en los servicios de calibración de recipientes volumétricos por el método gravimétrico\".-Junio 2016-",
+        "La incertidumbre esta expresada a dos cifras significativas de acuerdo a la Política de Incertidumbre de la EMA, a.c.; las cifras de las magnitudes de entrada y del mensurando son consistentes con su incertidumbre.",
+        "Es responsabilidad del usuario revisar y verificar el certificado. Si antes de 5 días no existen comentarios de su parte, se entenderá que los datos son correctos.",
+        "El tiempo de validez de los resultados contenidos en el certificado es establecido por el usuario con base a su programa de calibración ya que depende, tanto de las características del instrumento calibrado como de las prácticas para su manejo y uso.",
+        "Este documento es valido solo en su forma original (impreso o electronico) con las correspondientes firmas. No se debe reproducir este certificado de calibración, excepto en su totalidad."
+    ]
+}
