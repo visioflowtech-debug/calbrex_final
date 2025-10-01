@@ -521,10 +521,13 @@ function buildMedidasHeader(results) {
             <tbody>
                 <tr>
                     <!-- Columna Izquierda con datos del instrumento -->
-                    <td class="p-1 align-top" style="width: 75%; border: 1px solid #999;">
+                    <td class="p-1 align-top" style="width: 75%; border-right: 1px solid #999;">
                         <table class="w-full" style="border: none;">
-                            <tr style="border: none;"><td class="font-bold pr-2" style="border: none;">CLIENTE</td><td style="border: none;">${eg.nombre_cliente || ''}</td><td class="font-bold px-2" style="border: none;">FECHA REC.</td><td style="border: none;">${formatDate(eg.fecha_recepcion)}</td></tr>
-                            <tr style="border: none;"><td class="font-bold pr-2" style="border: none;">INSTRUMENTO</td><td style="border: none;">${eg.descripcion_instrumento || ''}</td><td class="font-bold px-2" style="border: none;">TIPO</td><td style="border: none;">${eg.tipo_instrumento || ''}</td><td class="font-bold px-2" style="border: none;">FECHA CAL.</td><td style="border: none;">${formatDate(eg.fecha_calibracion)}</td></tr>
+                            <!-- Fila 1: Cliente y Fecha Rec. -->
+                            <tr style="border: none;"><td class="font-bold pr-2" style="border: none;">CLIENTE</td><td style="border: none;" colspan="5">${eg.nombre_cliente || ''}</td><td class="font-bold px-2" style="border: none;">FECHA REC.</td><td style="border: none;" colspan="1">${formatDate(eg.fecha_recepcion)}</td></tr>
+                            <!-- Fila 2: Instrumento, Tipo y Fecha Cal. -->
+                            <tr style="border: none;"><td class="font-bold pr-2" style="border: none;">INSTRUMENTO</td><td style="border: none;" colspan="3">${eg.descripcion_instrumento || ''}</td><td class="font-bold px-2" style="border: none;">TIPO</td><td style="border: none;">${eg.tipo_instrumento || ''}</td><td class="font-bold px-2" style="border: none;">FECHA CAL.</td><td style="border: none;">${formatDate(eg.fecha_calibracion)}</td></tr>
+                            <!-- ... (y así sucesivamente para las demás filas) ... -->
                             <tr style="border: none;"><td class="font-bold pr-2" style="border: none;">MARCA</td><td style="border: none;">${eg.marca_instrumento || ''}</td><td class="font-bold px-2" style="border: none;">VOL. NOMI.</td><td style="border: none;">${eg.vol_nominal || ''}</td><td class="font-bold px-2" style="border: none;">VOLUMEN</td><td style="border: none;">${eg.tipo_volumen || ''}</td><td class="font-bold px-2" style="border: none;">Ɵ CUELLO:</td><td style="border: none;">${eg.cuello_instrumento || 'N.A.'}</td></tr>
                             <tr style="border: none;"><td class="font-bold pr-2" style="border: none;">MODELO</td><td style="border: none;">${eg.modelo_instrumento || ''}</td><td class="font-bold px-2" style="border: none;">UNIDAD</td><td style="border: none;">${eg.unidades || ''}</td><td class="font-bold px-2" style="border: none;">T. DESCARGA</td><td style="border: none;">${eg.t_descarga || 'N.A.'}</td><td class="font-bold px-2" style="border: none;">PUNTAS</td><td style="border: none;">${eg.puntas_valor || ''} ${eg.puntas_unidad || ''}</td></tr>
                             <tr style="border: none;"><td class="font-bold pr-2" style="border: none;">SERIE</td><td style="border: none;">${eg.serie_instrumento || ''}</td><td class="font-bold px-2" style="border: none;">CLASE</td><td style="border: none;">${eg.clase_instrumento || 'N.A.'}</td><td class="font-bold px-2" style="border: none;">DIV. MÍN.</td><td style="border: none;">${eg.div_min_valor || ''} ${eg.div_min_unidad || ''}</td><td class="font-bold px-2" style="border: none;">TOLERANCIA</td><td style="border: none;">${eg.tolerancia || 'N.A.'}</td></tr>
@@ -532,7 +535,7 @@ function buildMedidasHeader(results) {
                         </table>
                     </td>
                     <!-- Columna Derecha con datos del servicio -->
-                    <td class="p-1 align-top" style="width: 25%; border: 1px solid #999;">
+                    <td class="p-1 align-top" style="width: 25%;">
                         <table class="w-full" style="border: none;">
                             <tr style="border: none;"><td class="font-bold pr-2" style="border: none;">SERVICIO</td><td style="border: none;">${eg.numero_servicio || ''}</td></tr>
                             <tr style="border: none;"><td class="font-bold pr-2" style="border: none;">CERTIFICADO</td><td style="border: none;">${eg.numero_certificado || ''}</td></tr>
