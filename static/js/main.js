@@ -1359,16 +1359,23 @@ function buildCertificadoReport_PDF(results, chartImage = '') {
             </table>
         </section>
 
-        <!-- Resultados de la Calibración -->
+        <!-- Certificado y Resultados de la Calibración -->
         <section style="margin-top: 0.3cm;">
             <table style="width: 100%; border-collapse: collapse; font-size: 11px;">
+                <!-- Línea del número de certificado -->
+                <tr>
+                    <td style="padding: 4px; font-weight: bold; border: none; text-align: left; width: 15%;">Certificado:<br><span style="font-style: italic; color: #555; font-weight: normal;">Certificate:</span></td>
+                    <td style="padding: 4px; border: none; text-align: left;" colspan="3">${eg.numero_certificado || ''}</td>
+                </tr>
+                <!-- Encabezado de la sección -->
                 <tr class="medidas-header">
-                    <th style="border: none; padding: 4px; color: white; text-align: center;">
+                    <th style="border: none; padding: 4px; color: white; text-align: center;" colspan="4">
                         Resultados de la Calibración <br> <em style="font-weight: normal;">Calibration Results</em>
                     </th>
                 </tr>
+                <!-- Párrafo de introducción -->
                 <tr>
-                    <td style="padding: 8px; border: none;">${eg.introduccion_certificado}</td>
+                    <td style="padding: 8px; border: none;" colspan="4">${results.textos_reporte.introduccion_certificado}</td>
                 </tr>
             </table>
         </section>
@@ -1377,26 +1384,37 @@ function buildCertificadoReport_PDF(results, chartImage = '') {
         <section style="margin-top: 0.3cm;">
             <table style="width: 100%; border-collapse: collapse; font-size: 10px; text-align: center;">
                 <thead class="medidas-header">
+                    <!-- Fila 1 de encabezados (Títulos) -->
                     <tr>
                         <th style="border: 1px solid #999; padding: 4px; font-weight: bold; color: white;">CANAL</th>
-                        <th style="border: 1px solid #999; padding: 4px; font-weight: bold; color: white;">VALOR NOMINAL<br>(${unidades})</th>
-                        <th style="border: 1px solid #999; padding: 4px; font-weight: bold; color: white;">VOLUMEN DEL *IBC<br>(V20 °C) (${unidades})</th>
-                        <th style="border: 1px solid #999; padding: 4px; font-weight: bold; color: white;">ERROR DE MEDIDA<br>(${unidades})</th>
-                        <th style="border: 1px solid #999; padding: 4px; font-weight: bold; color: white;">ERROR DE MEDIDA<br>(%)</th>
-                        <th style="border: 1px solid #999; padding: 4px; font-weight: bold; color: white;">INCERTIDUMBRE<br>EXPANDIDA (${unidades})</th>
+                        <th style="border: 1px solid #999; padding: 4px; font-weight: bold; color: white;">VALOR NOMINAL</th>
+                        <th style="border: 1px solid #999; padding: 4px; font-weight: bold; color: white;">VOLUMEN DEL *IBC (V20 °C)</th>
+                        <th style="border: 1px solid #999; padding: 4px; font-weight: bold; color: white;">ERROR DE MEDIDA</th>
+                        <th style="border: 1px solid #999; padding: 4px; font-weight: bold; color: white;">ERROR DE MEDIDA</th>
+                        <th style="border: 1px solid #999; padding: 4px; font-weight: bold; color: white;">INCERTIDUMBRE EXPANDIDA</th>
                         <th style="border: 1px solid #999; padding: 4px; font-weight: bold; color: white;">EMT</th>
+                    </tr>
+                    <!-- Fila 2 de encabezados (Unidades) -->
+                    <tr>
+                        <th style="border: 1px solid #999; padding: 4px; font-weight: bold; color: white;"></th>
+                        <th style="border: 1px solid #999; padding: 4px; font-weight: bold; color: white;">(${unidades})</th>
+                        <th style="border: 1px solid #999; padding: 4px; font-weight: bold; color: white;">(${unidades})</th>
+                        <th style="border: 1px solid #999; padding: 4px; font-weight: bold; color: white;">(${unidades})</th>
+                        <th style="border: 1px solid #999; padding: 4px; font-weight: bold; color: white;">(%)</th>
+                        <th style="border: 1px solid #999; padding: 4px; font-weight: bold; color: white;">(${unidades})</th>
+                        <th style="border: 1px solid #999; padding: 4px; font-weight: bold; color: white;"></th>
                     </tr>
                 </thead>
                 <tbody>
                     ${results.aforos.map((aforo, index) => `
                         <tr>
                             <td style="border: 1px solid #999; padding: 4px;">${index + 1}</td>
-                            <td style="border: 1px solid #999; padding: 4px;">${aforo.valor_nominal.toFixed(2)}</td>
-                            <td style="border: 1px solid #999; padding: 4px;">${aforo.promedio_volumen_ul.toFixed(2)}</td>
-                            <td style="border: 1px solid #999; padding: 4px;">${aforo.error_medida_ul.toFixed(2)}</td>
-                            <td style="border: 1px solid #999; padding: 4px;">${aforo.error_medida_porcentaje !== null ? aforo.error_medida_porcentaje.toFixed(2) : 'N/A'}</td>
-                            <td style="border: 1px solid #999; padding: 4px;">${aforo.incertidumbre_expandida !== null ? aforo.incertidumbre_expandida.toFixed(3) : 'N/A'}</td>
-                            <td style="border: 1px solid #999; padding: 4px;">${aforo.emt !== null ? aforo.emt.toFixed(1) : 'N/A'}</td>
+                            <td style="border: 1px solid #999; padding: 4px;">${aforo.valor_nominal.toFixed(2).replace('.', ',')}</td>
+                            <td style="border: 1px solid #999; padding: 4px;">${aforo.promedio_volumen_ul.toFixed(2).replace('.', ',')}</td>
+                            <td style="border: 1px solid #999; padding: 4px;">${aforo.error_medida_ul.toFixed(3).replace('.', ',')}</td>
+                            <td style="border: 1px solid #999; padding: 4px;">${aforo.error_medida_porcentaje !== null ? aforo.error_medida_porcentaje.toFixed(4).replace('.', ',') : 'N/A'}</td>
+                            <td style="border: 1px solid #999; padding: 4px;">${aforo.incertidumbre_expandida !== null ? aforo.incertidumbre_expandida.toFixed(3).replace('.', ',') : 'N/A'}</td>
+                            <td style="border: 1px solid #999; padding: 4px;">${aforo.emt !== null ? aforo.emt.toFixed(1).replace('.', ',') : 'N/A'}</td>
                         </tr>
                     `).join('')}
                 </tbody>
@@ -1437,7 +1455,7 @@ function buildCertificadoReport_PDF(results, chartImage = '') {
         </section>
 
         <!-- Fin del Documento y Firma -->
-        <div style="text-align: center; font-weight: bold; color: #555; margin-top: 1.5cm;">
+        <div style="text-align: center; font-weight: bold; color: #8c2d2d; margin-top: 1.5cm;">
             <p>FIN DEL DOCUMENTO</p>
         </div>
 
