@@ -499,23 +499,7 @@ async function handleExportPdf(reportType) {
     }
 
     const serviceReportHtml = buildServicioReport_PDF(results, myChart ? myChart.toBase64Image() : ''); // Genera el HTML para el PDF
-    const firma = results.textos_reporte.firma_gerente || {};
-    let certificateHtml = document.getElementById('certificate-container').innerHTML; // No se añade firma de cliente aquí
-
-    // Añadir las firmas al HTML del certificado solo para la exportación a PDF
-    const signatureHtml = `
-        <section style="margin-top: 2.5cm; page-break-inside: avoid; font-size: 11px;">
-            <table style="width: 100%; border-collapse: collapse; border: none;">
-                <tr>
-                    <td style="width: 50%; text-align: center; padding: 0 1cm; border: none;">
-                        <div style="border-top: 1px solid #333; margin-bottom: 5px;"></div>
-                        <div>${firma.nombre || ''}</div>
-                        <div style="font-weight: bold;">${firma.cargo || ''}</div>
-                    </td>
-                </tr>
-            </table>
-        </section>`;
-    certificateHtml += signatureHtml;
+    const certificateHtml = buildCertificadoReport_PDF(results, window.errorIncertidumbreChart ? window.errorIncertidumbreChart.toBase64Image() : '');
 
     const medidasHtml = document.getElementById('medidas-report-container')?.innerHTML || 'No hay datos de mediciones.';
 
@@ -1176,6 +1160,164 @@ function buildServicioReport_HTML(results) {
     return html;
 }
 
+function buildCertificadoReport_PDF(results, chartImage = '') {
+    const eg = results.textos_reporte.entradas_generales || {};
+    const unidades = results.textos_reporte.unidades || 'µL';
+
+    const formatDate = (dateString) => {
+        if (!dateString) return 'N/A';
+        const date = new Date(dateString + 'T00:00:00');
+        return date.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    };
+
+    let html = `
+        <!-- Rastreabilidad -->
+        <section>
+            <table style="width: 100%; border-collapse: collapse; font-size: 11px;">
+                <tr class="medidas-header">
+                    <th style="border: none; padding: 4px; color: white; text-align: center;" colspan="6">
+                        Rastreabilidad <br> <em style="font-weight: normal;">Traceability</em>
+                    </th>
+                </tr>
+                <tr>
+                    <td style="padding: 4px; font-weight: bold; border: 1px solid #ccc;">Fecha Recepción:<br><span style="font-style: italic; color: #555; font-weight: normal;">Reception Date</span></td>
+                    <td style="padding: 4px; border: 1px solid #ccc;">${formatDate(eg.fecha_recepcion)}</td>
+                    <td style="padding: 4px; font-weight: bold; border: 1px solid #ccc;">Fecha Calibración:<br><span style="font-style: italic; color: #555; font-weight: normal;">Calibration Date</span></td>
+                    <td style="padding: 4px; border: 1px solid #ccc;">${formatDate(eg.fecha_calibracion)}</td>
+                    <td style="padding: 4px; font-weight: bold; border: 1px solid #ccc;">Certificado:<br><span style="font-style: italic; color: #555; font-weight: normal;">Certificate</span></td>
+                    <td style="padding: 4px; border: 1px solid #ccc;">${eg.numero_certificado || ''}</td>
+                </tr>
+                <tr>
+                    <td style="padding: 4px; font-weight: bold; border: 1px solid #ccc;">Fecha Emisión:<br><span style="font-style: italic; color: #555; font-weight: normal;">Issued Date</span></td>
+                    <td style="padding: 4px; border: 1px solid #ccc;">${formatDate(eg.fecha_emision)}</td>
+                    <td style="padding: 4px; font-weight: bold; border: 1px solid #ccc;">Servicio:<br><span style="font-style: italic; color: #555; font-weight: normal;">Service</span></td>
+                    <td style="padding: 4px; border: 1px solid #ccc;">${eg.numero_servicio || ''}</td>
+                    <td style="padding: 4px; font-weight: bold; border: 1px solid #ccc;">Magnitud evaluada:<br><span style="font-style: italic; color: #555; font-weight: normal;">Evaluated magnitude</span></td>
+                    <td style="padding: 4px; border: 1px solid #ccc;">Volumen</td>
+                </tr>
+            </table>
+        </section>
+
+        <!-- Trazabilidad Metrológica -->
+        <section style="margin-top: 0.5cm;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 11px;">
+                <tr class="medidas-header">
+                    <th style="border: none; padding: 4px; color: white; text-align: center;">
+                        Trazabilidad Metrológica <br> <em style="font-weight: normal;">Metrological Traceability</em>
+                    </th>
+                </tr>
+                <tr>
+                    <td style="padding: 8px; border: 1px solid #ccc; background-color: #f8f9fa;">
+                        <p><strong>Patrones de Referencia:</strong> <em style="font-style: italic; color: #555;">Standards Used</em><br>${results.textos_reporte.especificacion_principal}</p>
+                        <p style="margin-top: 8px;"><strong>Equipo auxiliar:</strong> <em style="font-style: italic; color: #555;">Auxiliary equipment</em><br>${results.textos_reporte.especificacion_ta}<br>${results.textos_reporte.especificacion_ca}</p>
+                        <p style="margin-top: 8px;"><strong>Trazabilidad metrológica:</strong> <em style="font-style: italic; color: #555;">Metrological Traceability</em><br>${results.textos_reporte.trazabilidad_nacional}</p>
+                        <p style="margin-top: 8px;"><strong>Procedimiento utilizado:</strong> <em style="font-style: italic; color: #555;">Procedure used</em><br>${results.textos_reporte.procedimiento_utilizado}</p>
+                        <p style="margin-top: 8px;"><strong>Lugar de Calibración:</strong> <em style="font-style: italic; color: #555;">Calibration Location</em><br>${results.textos_reporte.lugar_servicio}</p>
+                    </td>
+                </tr>
+            </table>
+        </section>
+
+        <!-- Resultados de la Calibración -->
+        <section style="margin-top: 0.5cm;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 11px;">
+                <tr class="medidas-header">
+                    <th style="border: none; padding: 4px; color: white; text-align: center;">
+                        Resultados de la Calibración <br> <em style="font-weight: normal;">Calibration Results</em>
+                    </th>
+                </tr>
+                <tr>
+                    <td style="padding: 8px; border: 1px solid #ccc; background-color: #f8f9fa;">${eg.introduccion_certificado}</td>
+                </tr>
+            </table>
+        </section>
+
+        <!-- Tabla de Resultados del Certificado -->
+        <section style="margin-top: 0.5cm;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 10px; text-align: center;">
+                <thead class="medidas-header">
+                    <tr>
+                        <th style="border: 1px solid #999; padding: 4px; font-weight: bold; color: white;">CANAL</th>
+                        <th style="border: 1px solid #999; padding: 4px; font-weight: bold; color: white;">VALOR NOMINAL<br>(${unidades})</th>
+                        <th style="border: 1px solid #999; padding: 4px; font-weight: bold; color: white;">VOLUMEN DEL *IBC<br>(V20 °C) (${unidades})</th>
+                        <th style="border: 1px solid #999; padding: 4px; font-weight: bold; color: white;">ERROR DE MEDIDA<br>(${unidades})</th>
+                        <th style="border: 1px solid #999; padding: 4px; font-weight: bold; color: white;">ERROR DE MEDIDA<br>(%)</th>
+                        <th style="border: 1px solid #999; padding: 4px; font-weight: bold; color: white;">INCERTIDUMBRE<br>EXPANDIDA (${unidades})</th>
+                        <th style="border: 1px solid #999; padding: 4px; font-weight: bold; color: white;">EMT</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${results.aforos.map((aforo, index) => `
+                        <tr>
+                            <td style="border: 1px solid #999; padding: 4px;">${index + 1}</td>
+                            <td style="border: 1px solid #999; padding: 4px;">${aforo.valor_nominal.toFixed(2)}</td>
+                            <td style="border: 1px solid #999; padding: 4px;">${aforo.promedio_volumen_ul.toFixed(2)}</td>
+                            <td style="border: 1px solid #999; padding: 4px;">${aforo.error_medida_ul.toFixed(2)}</td>
+                            <td style="border: 1px solid #999; padding: 4px;">${aforo.error_medida_porcentaje !== null ? aforo.error_medida_porcentaje.toFixed(2) : 'N/A'}</td>
+                            <td style="border: 1px solid #999; padding: 4px;">${aforo.incertidumbre_expandida !== null ? aforo.incertidumbre_expandida.toFixed(3) : 'N/A'}</td>
+                            <td style="border: 1px solid #999; padding: 4px;">${aforo.emt !== null ? aforo.emt.toFixed(1) : 'N/A'}</td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+            <p style="font-size: 10px; margin-top: 5px;">* IBC Instrumento Bajo Calibración</p>
+        </section>
+
+        <!-- Gráfico de Incertidumbre -->
+        <section style="margin-top: 0.5cm; text-align: center; page-break-inside: avoid;">
+            <h3 style="font-size: 12px; font-weight: bold; margin-bottom: 0.3cm; text-align: center;">Error de medida ±Incertidumbre de medida Vs. Valor de referencia</h3>
+            ${chartImage ? `
+                <img src="${chartImage}" style="max-width: 80%; height: auto; margin: 0 auto; display: block;">
+            ` : `
+                <div style="border: 1px dashed #ccc; padding: 20px; color: #777;">
+                    Gráfico no disponible.
+                </div>
+            `}
+        </section>
+
+        <!-- Notas y Observaciones -->
+        <section style="margin-top: 0.5cm;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 11px;">
+                <tr class="medidas-header">
+                    <th style="border: none; padding: 4px; color: white; text-align: center;">
+                        Notas y Observaciones <br> <em style="font-weight: normal;">Notes and Observations</em>
+                    </th>
+                </tr>
+                <tr>
+                    <td style="padding: 8px; border: 1px solid #ccc; background-color: #f8f9fa; font-size: 10px;">
+                        ${results.textos_reporte.notas_certificado.map(nota => `<p style="margin-bottom: 5px;">${nota}</p>`).join('')}
+                        <p style="margin-top: 10px; padding-top: 8px; border-top: 1px solid #ddd;">
+                            ${document.getElementById('puntas_valor').value ? `Se realizó con puntas nuevas.` : ''}
+                        </p>
+                        <p>${results.textos_reporte.observaciones}</p>
+                    </td>
+                </tr>
+            </table>
+        </section>
+
+        <!-- Fin del Documento y Firma -->
+        <div style="text-align: center; font-weight: bold; color: #555; margin-top: 1.5cm;">
+            <p>FIN DEL DOCUMENTO</p>
+        </div>
+
+        <section style="margin-top: 2.5cm; page-break-inside: avoid; font-size: 11px;">
+            ${(() => { const firma = results.textos_reporte.firma_gerente || {}; return `
+            <table style="width: 100%; border-collapse: collapse; border: none;">
+                <tr>
+                    <td style="width: 50%; text-align: center; padding: 0 1cm; border: none;">
+                        <div style="border-top: 1px solid #333; margin-bottom: 5px;"></div>
+                        <div>${firma.nombre || ''}</div>
+                        <div style="font-weight: bold;">${firma.cargo || ''}</div>
+                    </td>
+                </tr>
+            </table>
+            `})()}
+        </section>
+    `;
+
+    return html;
+}
+
 function displayResults(results) {
     window.latestResults = results; // Guardar resultados para la exportación
     const serviceReportContainer = document.getElementById('results-container');
@@ -1198,11 +1340,43 @@ function displayResults(results) {
     medidasReportContainer.innerHTML = medidasHeaderHtml;
 
     // --- Generar el contenido del Certificado ---
-    // Por ahora, solo un marcador de posición.
+    const eg = results.textos_reporte.entradas_generales || {};    const unidades = results.textos_reporte.unidades || 'µL';    const formatDate = (dateString) => {
+        if (!dateString) return 'N/A';
+        const date = new Date(dateString + 'T00:00:00');
+        return date.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    };
+
     let certificateHtml = `
         <section class="bg-white p-6 rounded-lg shadow-md border border-gray-200">
-            <h1>Certificado de Calibración</h1>
-            
+            <!-- Rastreabilidad -->
+            <div class="mb-6">
+                <h3 class="text-lg font-semibold mb-2 text-center bg-red-600 text-white py-1 rounded-t-lg">
+                    Rastreabilidad
+                    <span class="block text-sm font-normal italic">Traceability</span>
+                </h3>
+                <table class="min-w-full border text-center text-xs">
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        <tr class="divide-x divide-gray-200">
+                            <td class="px-2 py-1"><strong>Fecha Recepción:</strong><br><span class="italic text-gray-500">Reception Date:</span></td>
+                            <td class="px-2 py-1">${formatDate(eg.fecha_recepcion)}</td>
+                            <td class="px-2 py-1"><strong>Fecha Calibración:</strong><br><span class="italic text-gray-500">Calibration Date:</span></td>
+                            <td class="px-2 py-1">${formatDate(eg.fecha_calibracion)}</td>
+                            <td class="px-2 py-1"><strong>Certificado:</strong><br><span class="italic text-gray-500">Certificate:</span></td>
+                            <td class="px-2 py-1">${eg.numero_certificado || ''}</td>
+                        </tr>
+                        <tr class="divide-x divide-gray-200">
+                            <td class="px-2 py-1"><strong>Fecha Emisión:</strong><br><span class="italic text-gray-500">Issued Date:</span></td>
+                            <td class="px-2 py-1">${formatDate(eg.fecha_emision)}</td>
+                            <td class="px-2 py-1"><strong>Servicio:</strong><br><span class="italic text-gray-500">Service:</span></td>
+                            <td class="px-2 py-1">${eg.numero_servicio || ''}</td>
+                            <td class="px-2 py-1"><strong>Magnitud evaluada:</strong><br><span class="italic text-gray-500">Evaluated magnitude</span></td>
+                            <td class="px-2 py-1">Volumen</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+
             <!-- Trazabilidad Metrológica -->
             <h3 class="text-lg font-semibold mt-6 mb-2">
                 Trazabilidad Metrológica
@@ -1262,13 +1436,13 @@ function displayResults(results) {
                 <span class="block text-sm font-normal italic text-gray-500">Calibration Results</span>
             </h3>
 
-            <p class="text-base text-gray-600 mb-4 p-4 border-l-4 border-blue-500 bg-blue-50" style="font-size: 11px;">
-                ${results.textos_reporte.introduccion_certificado}
+            <p class="text-sm text-gray-600 mb-4 p-4 border-l-4 border-blue-500 bg-blue-50">
+                ${eg.introduccion_certificado}
             </p>
 
             <!-- Tabla de Resultados del Certificado -->
             <div class="mb-6">
-                <table class="min-w-full border text-center" style="font-size: 10px;">
+                <table class="min-w-full border text-center text-xs">
                     <thead class="bg-gray-50">
                         <tr class="divide-x divide-gray-200 text-xs font-medium text-gray-500 uppercase">
                             <th class="px-2 py-2">CANAL</th>
@@ -1283,24 +1457,24 @@ function displayResults(results) {
                     <tbody class="bg-white divide-y divide-gray-200">
                         ${results.aforos.map((aforo, index) => `
                             <tr class="divide-x divide-gray-200">
-                                <td class="px-2 py-2 text-sm">${index + 1}</td>
-                                <td class="px-2 py-2 text-sm">${aforo.valor_nominal.toFixed(2)}</td>
-                                <td class="px-2 py-2 text-sm">${aforo.promedio_volumen_ul.toFixed(2)}</td>
-                                <td class="px-2 py-2 text-sm font-medium ${aforo.error_medida_ul >= 0 ? 'text-blue-600' : 'text-red-600'}">
+                                <td class="px-2 py-2">${index + 1}</td>
+                                <td class="px-2 py-2">${aforo.valor_nominal.toFixed(2)}</td>
+                                <td class="px-2 py-2">${aforo.promedio_volumen_ul.toFixed(2)}</td>
+                                <td class="px-2 py-2 font-medium ${aforo.error_medida_ul >= 0 ? 'text-blue-600' : 'text-red-600'}">
                                     ${aforo.error_medida_ul.toFixed(2)}
                                 </td>
-                                <td class="px-2 py-2 text-sm">
+                                <td class="px-2 py-2">
                                     ${aforo.error_medida_porcentaje !== null ? aforo.error_medida_porcentaje.toFixed(2) : 'N/A'}
                                 </td>
-                                <td class="px-2 py-2 text-sm">
+                                <td class="px-2 py-2">
                                     ${aforo.incertidumbre_expandida !== null ? aforo.incertidumbre_expandida.toFixed(3) : 'N/A'} 
                                 </td>
-                                <td class="px-2 py-2 text-sm">${aforo.emt !== null ? aforo.emt.toFixed(1) : 'N/A'}</td>
+                                <td class="px-2 py-2">${aforo.emt !== null ? aforo.emt.toFixed(1) : 'N/A'}</td>
                             </tr>
                         `).join('')}
                     </tbody>
                 </table>
-                <p class="text-sm text-gray-500 mt-2" style="font-size: 10px;">* IBC Instrumento Bajo Calibración</p>
+                <p class="text-xs text-gray-500 mt-2">* IBC Instrumento Bajo Calibración</p>
 
                 <!-- Gráfico de Incertidumbre -->
                 <h3 class="text-lg font-semibold mt-8 mb-2 chart-container">Error de medida ±Incertidumbre de medida Vs. Valor de referencia</h3>
@@ -1313,7 +1487,7 @@ function displayResults(results) {
                     Notas y Observaciones
                     <span class="block text-sm font-normal italic text-gray-500">Notes and Observations</span>
                 </h3>
-                <div class="text-sm text-gray-600 p-4 border rounded-lg bg-gray-50 space-y-3" style="font-size: 10px;">
+                <div class="text-xs text-gray-600 p-4 border rounded-lg bg-gray-50 space-y-3">
                     ${results.textos_reporte.notas_certificado.map(nota => `<p>${nota}</p>`).join('')}
                     
                     <!-- Observación dinámica -->
@@ -1432,91 +1606,91 @@ function displayResults(results) {
 
     // --- Renderizar el nuevo gráfico de Incertidumbre ---
 
-    // const errorIncertidumbreData = {
-    //     datasets: [
-    //         {
-    //             label: 'Rango de Incertidumbre',
-    //             data: results.aforos.map(a => ({
-    //                 x: a.promedio_volumen_ul,
-    //                 y: [a.error_medida_ul - a.incertidumbre_expandida, a.error_medida_ul + a.incertidumbre_expandida]
-    //             })),
-    //             backgroundColor: 'rgba(255, 99, 132, 0.2)', // Rosa semitransparente
-    //             borderColor: 'rgba(255, 99, 132, 1)', // Rosa sólido
-    //             borderWidth: 1,
-    //             barPercentage: 0.05, // Hace las barras de error muy delgadas para que parezcan líneas
-    //             categoryPercentage: 1.0,
-    //             order: 2 // Asegura que las barras se dibujen detrás de los puntos
-    //         },
-    //         {
-    //             label: 'Error de Medida',
-    //             data: results.aforos.map(a => ({
-    //                 x: a.promedio_volumen_ul,
-    //                 y: a.error_medida_ul
-    //             })),
-    //             backgroundColor: 'rgba(54, 162, 235, 1)',
-    //             borderColor: 'rgba(54, 162, 235, 1)',
-    //             type: 'scatter',
-    //             pointRadius: 6,
-    //             pointHoverRadius: 8,
-    //             order: 1 // Asegura que los puntos se dibujen encima de las barras
-    //         }
-    //     ]
-    // };
+    const errorIncertidumbreData = {
+        datasets: [
+            {
+                label: 'Rango de Incertidumbre',
+                data: results.aforos.map(a => ({
+                    x: a.promedio_volumen_ul,
+                    y: [a.error_medida_ul - a.incertidumbre_expandida, a.error_medida_ul + a.incertidumbre_expandida]
+                })),
+                backgroundColor: 'rgba(255, 99, 132, 0.2)', // Rosa semitransparente
+                borderColor: 'rgba(255, 99, 132, 1)', // Rosa sólido
+                borderWidth: 1,
+                barPercentage: 0.05, // Hace las barras de error muy delgadas para que parezcan líneas
+                categoryPercentage: 1.0,
+                order: 2 // Asegura que las barras se dibujen detrás de los puntos
+            },
+            {
+                label: 'Error de Medida',
+                data: results.aforos.map(a => ({
+                    x: a.promedio_volumen_ul,
+                    y: a.error_medida_ul
+                })),
+                backgroundColor: 'rgba(54, 162, 235, 1)',
+                borderColor: 'rgba(54, 162, 235, 1)',
+                type: 'scatter',
+                pointRadius: 6,
+                pointHoverRadius: 8,
+                order: 1 // Asegura que los puntos se dibujen encima de las barras
+            }
+        ]
+    };
 
-    // // Renderizar gráfico de Incertidumbre (Certificado)
-    // if (window.errorIncertidumbreChart instanceof Chart) { window.errorIncertidumbreChart.destroy(); }
-    // const errorIncertidumbreCtx = document.getElementById('errorIncertidumbreChart').getContext('2d');
-    // window.errorIncertidumbreChart = new Chart(errorIncertidumbreCtx, {
-    //     type: 'bar', // El tipo base es 'bar' para las barras de error
-    //     data: errorIncertidumbreData,
-    //     options: {
-    //         responsive: true,
-    //         maintainAspectRatio: false,
-    //         scales: {
-    //             y: {
-    //                 min: -0.10,
-    //                 max: 0.07,
-    //                 ticks: {
-    //                     stepSize: 0.01
-    //                 },
-    //                 title: { 
-    //                     display: false
-    //                 }
-    //             },
-    //             x: {
-    //                 type: 'linear',
-    //                 position: 'bottom',
-    //                 grace: '10%'
-    //             }
-    //         },
-    //         plugins: {
-    //             legend: {
-    //                 display: false
-    //             },
-    //             datalabels: {
-    //                 display: true,
-    //                 align: 'bottom',
-    //                 offset: 8,
-    //                 color: '#444',
-    //                 font: {
-    //                     weight: 'bold',
-    //                     size: 10,
-    //                 },
-    //                 formatter: (value, context) => {
-    //                     // Mostrar solo en el dataset de scatter (puntos)
-    //                     if (context.dataset.type === 'scatter') {
-    //                         return value.x.toFixed(2);
-    //                     }
-    //                     return null;
-    //                 }
-    //             },
-    //             tooltip: {
-    //                 mode: 'index',
-    //                 intersect: false,
-    //             }
-    //         }
-    //     }
-    // });
+    // Renderizar gráfico de Incertidumbre (Certificado)
+    if (window.errorIncertidumbreChart instanceof Chart) { window.errorIncertidumbreChart.destroy(); }
+    const errorIncertidumbreCtx = document.getElementById('errorIncertidumbreChart').getContext('2d');
+    window.errorIncertidumbreChart = new Chart(errorIncertidumbreCtx, {
+        type: 'bar', // El tipo base es 'bar' para las barras de error
+        data: errorIncertidumbreData,
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    min: -0.10,
+                    max: 0.07,
+                    ticks: {
+                        stepSize: 0.01
+                    },
+                    title: { 
+                        display: false
+                    }
+                },
+                x: {
+                    type: 'linear',
+                    position: 'bottom',
+                    grace: '10%'
+                }
+            },
+            plugins: {
+                legend: {
+                    display: false
+                },
+                datalabels: {
+                    display: true,
+                    align: 'bottom',
+                    offset: 8,
+                    color: '#444',
+                    font: {
+                        weight: 'bold',
+                        size: 10,
+                    },
+                    formatter: (value, context) => {
+                        // Mostrar solo en el dataset de scatter (puntos)
+                        if (context.dataset.type === 'scatter') {
+                            return value.x.toFixed(2);
+                        }
+                        return null;
+                    }
+                },
+                tooltip: {
+                    mode: 'index',
+                    intersect: false,
+                }
+            }
+        }
+    });
 
 }
 const syncFields = [ // CORREGIDO: IDs no existían, ahora se usan los correctos.

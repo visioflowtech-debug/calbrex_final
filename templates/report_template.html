@@ -153,18 +153,39 @@
 </head>
 <body>
     <!-- Elemento para el Encabezado (WeasyPrint lo tomará de aquí) -->
-    {% if report_type == 'servicio' or report_type == 'certificado' %}
-        <!-- Encabezado para Reporte de Servicio y Certificado -->
+    {% if report_type == 'servicio' %}
+        <!-- Encabezado para Reporte de Servicio -->
         <div id="page-header">
              <table style="width: 100%; border-collapse: collapse;">
                 <tr>
                     <td style="width: 20%; border: none; text-align: left;">
                         <img src="{{ base_url }}static/img/logo.png" style="height: 50px;"/>
                     </td>
-                    <td style="width: 60%; border: none; text-align: center; font-size: 16px; font-weight: bold; vertical-align: middle;">
+                    <td style="width: 60%; border: none; text-align: center; font-size: 18px; font-weight: bold; vertical-align: middle;">
                         Reporte de Servicio de Mantenimiento
                     </td>
                     <td style="width: 20%; border: none;"></td>
+                </tr>
+            </table>
+        </div>
+        <div class="main-content">
+            {{ content_html|safe }}
+        </div>
+    {% elif report_type == 'certificado' %}
+        <!-- Encabezado para Certificado de Calibración -->
+        <div id="page-header">
+             <table style="width: 100%; border-collapse: collapse;">
+                <tr>
+                    <td style="width: 20%; border: none; text-align: left; vertical-align: middle;">
+                        <img src="{{ base_url }}static/img/logo.png" style="height: 50px;"/>
+                    </td>
+                    <td style="width: 60%; border: none; text-align: center; vertical-align: middle;">
+                        <div style="font-size: 18px; font-weight: bold;">Certificado de Calibración Volumen</div>
+                        <div style="font-size: 14px; font-style: italic;">Volume Calibration Certificate</div>
+                    </td>
+                    <td style="width: 20%; border: none; text-align: right; vertical-align: middle;">
+                        <img src="{{ base_url }}static/img/V-96.png" style="height: 50px;"/>
+                    </td>
                 </tr>
             </table>
         </div>

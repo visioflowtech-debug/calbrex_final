@@ -96,6 +96,13 @@ def generar_textos_reporte(entradas_generales, resultados_aforos, especificacion
     """
     # Construir el párrafo descriptivo inicial
     eg = entradas_generales
+
+    # Añadir fecha de emisión (calibración + 2 días)
+    if eg.get('fecha_calibracion'):
+        from datetime import datetime, timedelta
+        fecha_cal = datetime.strptime(eg['fecha_calibracion'], '%Y-%m-%d')
+        eg['fecha_emision'] = (fecha_cal + timedelta(days=2)).strftime('%Y-%m-%d')
+
     texto_intro = f"Los resultados que a continuación se emiten, corresponden al servicio de {eg.get('descripcion_instrumento', '')} tipo {eg.get('tipo_instrumento', '')}"
     
     if eg.get('marca_instrumento') and eg.get('marca_instrumento').lower() not in ['s/m', 'na', 'n.a', 'n/a']:
