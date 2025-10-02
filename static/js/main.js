@@ -1167,11 +1167,11 @@ function buildServicioReport_HTML(results) {
                 </div>
             </div>
 
-        </section>
+            <!-- Observaciones -->
+            <h3 class="text-lg font-semibold mt-8 mb-2">Observaciones</h3>
+            <p class="text-sm p-4 border rounded-lg bg-gray-50">${results.textos_reporte.observaciones}</p>
 
-        <!-- Observaciones -->
-        <h3 class="text-lg font-semibold mt-8 mb-2">Observaciones</h3>
-        <p class="text-sm p-4 border rounded-lg bg-gray-50">${results.textos_reporte.observaciones}</p>
+        </section>
     `;
     return html;
 }
