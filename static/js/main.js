@@ -1,4 +1,4 @@
-// --- LÓGICA DE LA INTERFAZ ---
+ // --- LÓGICA DE LA INTERFAZ ---
 
 // --- CONFIGURACIÓN ---
 const API_BASE_URL = '';
@@ -57,6 +57,7 @@ const testData = {
         promedio1: 2.01,
         promedio2: 9.99,
         promedio3: 19.95,
+        promedio4: 39.9,
     },
     aforos: [
         { punta: "20 µL", pasos: "1", mediciones: [
@@ -94,6 +95,18 @@ const testData = {
             { vacio: 0.0000, lleno: 0.019905, temp_agua: 19.1, temp_amb: 19.4, presion: 783.0, humedad: 54.3 },
             { vacio: 0.0000, lleno: 0.019963, temp_agua: 19.1, temp_amb: 19.5, presion: 783.0, humedad: 54.4 },
             { vacio: 0.0000, lleno: 0.019954, temp_agua: 19.1, temp_amb: 19.4, presion: 783.0, humedad: 54.4 },
+        ]},
+        { punta: "20 µL", pasos: "1", mediciones: [
+            { vacio: 0.0000, lleno: 0.039900, temp_agua: 19.1, temp_amb: 19.4, presion: 783.1, humedad: 54.0 },
+            { vacio: 0.0000, lleno: 0.039950, temp_agua: 19.1, temp_amb: 19.4, presion: 783.1, humedad: 54.0 },
+            { vacio: 0.0000, lleno: 0.039880, temp_agua: 19.1, temp_amb: 19.4, presion: 783.1, humedad: 54.1 },
+            { vacio: 0.0000, lleno: 0.039920, temp_agua: 19.1, temp_amb: 19.3, presion: 783.1, humedad: 54.2 },
+            { vacio: 0.0000, lleno: 0.039860, temp_agua: 19.1, temp_amb: 19.3, presion: 783.1, humedad: 54.2 },
+            { vacio: 0.0000, lleno: 0.039870, temp_agua: 19.1, temp_amb: 19.3, presion: 783.1, humedad: 54.1 },
+            { vacio: 0.0000, lleno: 0.039910, temp_agua: 19.1, temp_amb: 19.4, presion: 783.0, humedad: 54.2 },
+            { vacio: 0.0000, lleno: 0.039905, temp_agua: 19.1, temp_amb: 19.4, presion: 783.0, humedad: 54.3 },
+            { vacio: 0.0000, lleno: 0.039965, temp_agua: 19.1, temp_amb: 19.5, presion: 783.0, humedad: 54.4 },
+            { vacio: 0.0000, lleno: 0.039955, temp_agua: 19.1, temp_amb: 19.4, presion: 783.0, humedad: 54.4 },
         ]}
     ]
 };
@@ -105,6 +118,9 @@ function clearForm() {
     document.getElementById('status-message').textContent = '';
     document.getElementById('export-buttons-container').classList.add('hidden');
     changeTab(1);
+    generateAforoContent('tab-1', 1);
+    generateAforoContent('tab-2', 2);
+    generateAforoContent('tab-3', 3);
     updateAforoHeaders();
     if (myChart) {
         myChart.destroy();
@@ -146,23 +162,34 @@ function autocompleteWithTestData() {
             document.getElementById(`aforo${a}-humedad-${i}`).value = med.humedad.toFixed(1);
         }
     }
-    
+
     // Autocompletar tabla de condiciones iniciales
     document.getElementById('inicial-promedio-1').value = testData.condiciones_iniciales.promedio1;
     document.getElementById('inicial-promedio-2').value = testData.condiciones_iniciales.promedio2;
     document.getElementById('inicial-promedio-3').value = testData.condiciones_iniciales.promedio3;
 }
 
+async function loadSiteConfig() {
+    try {
+        const response = await fetch('/static/config/site_config.json');
+        const config = await response.json();
+        document.getElementById('firma_nombre').value = config.firma_gerente?.nombre || 'No configurado';
+        document.getElementById('firma_cargo').value = config.firma_gerente?.cargo || 'No configurado';
+    } catch (error) {
+        console.error('Error al cargar la configuración del sitio:', error);
+    }
+}
+
 function updateAforoHeaders() {
     const volNominal = parseFloat(document.getElementById('vol_nominal').value) || 0;
     const aforo1_nom = (volNominal / 10).toFixed(2);
     const aforo2_nom = (volNominal / 2).toFixed(2);
-    const aforo3_nom = volNominal.toFixed(2);
-    
+    const aforo3_nom = (volNominal).toFixed(2);
+
     document.getElementById('aforo1-vol_nom').value = aforo1_nom;
     document.getElementById('aforo2-vol_nom').value = aforo2_nom;
     document.getElementById('aforo3-vol_nom').value = aforo3_nom;
-    
+
     document.getElementById('inicial-nominal-1-display').value = aforo1_nom;
     document.getElementById('inicial-nominal-2-display').value = aforo2_nom;
     document.getElementById('inicial-nominal-3-display').value = aforo3_nom;
@@ -287,7 +314,15 @@ function collectFormData() {
             tipo_volumen: document.getElementById('tipo_volumen').value,
             tipo_calibracion: document.getElementById('tipo_calibracion').value,
             ajuste_realizado: document.getElementById('ajuste_realizado').value,
+            // Datos del reporte de servicio
+            direccion_cliente_reporte: document.getElementById('direccion_cliente_reporte').value,
+            telefono_cliente_reporte: document.getElementById('telefono_cliente_reporte').value,
+            contacto_reporte_directo: document.getElementById('contacto_reporte_directo').value,
+            intervalo_min_reporte: document.getElementById('intervalo_min_reporte').value,
+            intervalo_max_reporte: document.getElementById('intervalo_max_reporte').value,
+            // Fin datos del reporte
             observaciones: document.getElementById('observaciones').value,
+            cotizacion: document.getElementById('cotizacion').value, // <-- AÑADIDO: Faltaba recolectar este dato
             div_min_valor: parseFloat(document.getElementById('div_min_valor').value) || 0, // <-- AÑADIDO
             div_min_unidad: document.getElementById('div_min_unidad').value,
             tolerancia: document.getElementById('tolerancia').value,
@@ -305,6 +340,10 @@ function collectFormData() {
                 promedio1: parseFloat(document.getElementById('inicial-promedio-1').value),
                 promedio2: parseFloat(document.getElementById('inicial-promedio-2').value),
                 promedio3: parseFloat(document.getElementById('inicial-promedio-3').value),
+            },
+            firma_gerente: {
+                nombre: document.getElementById('firma_nombre').value,
+                cargo: document.getElementById('firma_cargo').value,
             }
         }
     };
@@ -330,7 +369,7 @@ function collectFormData() {
         if (a === 1) valor_nominal_aforo = volNominal / 10;
         else if (a === 2) valor_nominal_aforo = volNominal / 2;
         else valor_nominal_aforo = volNominal;
-        
+
         data[`aforo${a}`] = {
             valor_nominal: valor_nominal_aforo,
             mediciones_masa: medicionesMasa,
@@ -445,10 +484,39 @@ async function handleExportPdf(reportType) {
     const btn = document.getElementById(`export-${reportType}-btn`);
     const statusMsg = document.getElementById('status-message');
     const originalBtnText = btn.querySelector('span').textContent;
-    // Extraer el contenido HTML de los reportes generados
-    const serviceReportHtml = document.getElementById('results-container').innerHTML;
-    const certificateHtml = document.getElementById('certificate-container').innerHTML;
-    // Extraer el HTML del reporte de "Medidas" (que ahora incluye el encabezado y la tabla)
+
+    btn.disabled = true;
+    btn.querySelector('span').textContent = '...';
+
+    // Obtener los resultados guardados para generar el HTML del PDF al momento
+    const results = window.latestResults;
+    if (!results) {
+        statusMsg.textContent = 'Error: No hay resultados para exportar. Genere un reporte primero.';
+        statusMsg.className = 'text-sm font-medium text-red-600';
+        btn.disabled = false;
+        btn.querySelector('span').textContent = originalBtnText;
+        return;
+    }
+
+    const serviceReportHtml = buildServicioReport_PDF(results, myChart ? myChart.toBase64Image() : ''); // Genera el HTML para el PDF
+    const firma = results.textos_reporte.firma_gerente || {};
+    let certificateHtml = document.getElementById('certificate-container').innerHTML; // No se añade firma de cliente aquí
+
+    // Añadir las firmas al HTML del certificado solo para la exportación a PDF
+    const signatureHtml = `
+        <section style="margin-top: 2.5cm; page-break-inside: avoid; font-size: 11px;">
+            <table style="width: 100%; border-collapse: collapse; border: none;">
+                <tr>
+                    <td style="width: 50%; text-align: center; padding: 0 1cm; border: none;">
+                        <div style="border-top: 1px solid #333; margin-bottom: 5px;"></div>
+                        <div>${firma.nombre || ''}</div>
+                        <div style="font-weight: bold;">${firma.cargo || ''}</div>
+                    </td>
+                </tr>
+            </table>
+        </section>`;
+    certificateHtml += signatureHtml;
+
     const medidasHtml = document.getElementById('medidas-report-container')?.innerHTML || 'No hay datos de mediciones.';
 
     if (!serviceReportHtml || !certificateHtml || !medidasHtml.includes('table')) {
@@ -456,9 +524,6 @@ async function handleExportPdf(reportType) {
         statusMsg.className = 'text-sm font-medium text-red-600';
         return;
     }
-
-    btn.disabled = true;
-    btn.querySelector('span').textContent = '...';
 
     try {
         const response = await fetch(`${API_BASE_URL}/exportar-pdf`, {
@@ -539,13 +604,14 @@ function buildMedidasHeader(results) {
         return date.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
     };
 
+    const fontSizeStyle = "font-size: 10px;"; // Reducido para optimizar espacio
     const headerHtml = `
-    <div style="margin-top: 0.2cm;">
+    <div style="margin-top: 0.1cm;">
         <table style="width: 100%; border-collapse: collapse; border-spacing: 0;">
-            <tbody style="font-size: 7px;">
+            <tbody>
                 <tr>
                     <td style="width: 80%; vertical-align: top; border: 1px solid black; padding: 0;">
-                        <table style="width: 100%; font-size: 7px; line-height: 1.2; border: none;">
+                        <table style="width: 100%; font-size: 11px; line-height: 1.2; border: none;">
                             <tr><td style="padding: 1px 4px; font-weight: bold; border: none;">CLIENTE</td><td style="padding: 1px 4px; border: none;" colspan="5">${eg.nombre_cliente || ''}</td><td style="padding: 1px 4px; font-weight: bold; border: none;">FECHA REC.</td><td style="padding: 1px 4px; border: none;">${formatDate(eg.fecha_recepcion)}</td></tr>
                             <tr><td style="padding: 1px 4px; font-weight: bold; border: none;">INSTRUMENTO</td><td style="padding: 1px 4px; border: none;" colspan="3">${eg.descripcion_instrumento || ''}</td><td style="padding: 1px 4px; font-weight: bold; border: none;">TIPO</td><td style="padding: 1px 4px; border: none;">${eg.tipo_instrumento || ''}</td><td style="padding: 1px 4px; font-weight: bold; border: none;">FECHA CAL.</td><td style="padding: 1px 4px; border: none;">${formatDate(eg.fecha_calibracion)}</td></tr>
                             <tr><td style="padding: 1px 4px; font-weight: bold; border: none;">MARCA</td><td style="padding: 1px 4px; border: none;">${eg.marca_instrumento || ''}</td><td style="padding: 1px 4px; font-weight: bold; border: none;">VOL. NOMI.</td><td style="padding: 1px 4px; border: none;">${eg.vol_nominal || ''}</td><td style="padding: 1px 4px; font-weight: bold; border: none;">VOLUMEN</td><td style="padding: 1px 4px; border: none;">${eg.tipo_volumen || ''}</td><td style="padding: 1px 4px; font-weight: bold; border: none;">Ɵ CUELLO:</td><td style="padding: 1px 4px; border: none;">${eg.cuello_instrumento || 'N.A.'}</td></tr>
@@ -555,7 +621,7 @@ function buildMedidasHeader(results) {
                         </table>
                     </td>
                     <td style="width: 20%; vertical-align: top; border: 1px solid black; padding: 0;">
-                        <table style="width: 100%; font-size: 7px; line-height: 1.2; border: none;">
+                        <table style="width: 100%; font-size: 11px; line-height: 1.2; border: none;">
                             <tr><td style="padding: 1px 4px; font-weight: bold; border: none;">SERVICIO</td><td style="padding: 1px 4px; border: none;">${eg.numero_servicio || ''}</td></tr>
                             <tr><td style="padding: 1px 4px; font-weight: bold; border: none;">CERTIFICADO</td><td style="padding: 1px 4px; border: none;">${eg.numero_certificado || ''}</td></tr>
                             <tr><td style="padding: 1px 4px; font-weight: bold; border: none;">PATRÓN</td><td style="padding: 1px 4px; border: none;">${eg.patron_seleccionado || ''}</td></tr>
@@ -574,11 +640,10 @@ function buildMedidasHeader(results) {
     const generateAforoTable = (aforoIndex) => {
         const aforo = aforoIndex < aforos.length ? aforos[aforoIndex] : null;
         const showData = aforoIndex < aforos.length;
+        const cellStyle = `border: 1px solid black; padding: 2px 3px; text-align: right; ${fontSizeStyle}`;
+        const headerCellStyle = `border: 1px solid black; padding: 2px; text-align: center; color: white; ${fontSizeStyle}`;
 
-        const cellStyle = "border: 1px solid black; padding: 2px 3px; text-align: right;"; // Padding ligeramente aumentado
-        const headerCellStyle = "border: 1px solid black; padding: 2px; text-align: center; color: white;";
-
-        const diagonalLine = !showData ? `
+        const diagonalLine = !showData ? /*html*/`
             <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; overflow: hidden;">
                 <svg width="100%" height="100%" style="position: absolute; top: 0; left: 0;">
                     <line x1="0" y1="0" x2="100%" y2="100%" stroke="black" stroke-width="1"/>
@@ -586,28 +651,39 @@ function buildMedidasHeader(results) {
             </div>
         ` : '';
 
-        return `
+        return /*html*/`
             <div style="width: 48%;">
-                <table style="width: 100%; border-collapse: collapse; font-size: 7px; line-height: 1.2; margin-bottom: 0;">
+                <table style="width: 100%; border-collapse: collapse; ${fontSizeStyle} line-height: 1.2; margin-bottom: 0;">
                     <!-- Fila de encabezado con fondo rojo -->
                     <tr class="medidas-header">
-                        <td style="border: 1px solid black; padding: 2px 4px; color: white;"><strong>AFORO:</strong> ${showData ? aforoIndex + 1 : ''}</td>
-                        <td style="border: 1px solid black; padding: 2px 4px; color: white;"><strong>VOL. NOM:</strong> ${showData ? formatNumber(aforo.valor_nominal, 2) : ''}</td>
-                        <td style="border: 1px solid black; padding: 2px 4px; color: white;"><strong>PUNTA:</strong> ${showData ? '1' : ''}</td>
-                        <td style="border: 1px solid black; padding: 2px 4px; color: white;"><strong>PASOS:</strong></td>
+                        <td style="border: none; padding: 2px 4px; color: white;"><strong>AFORO:</strong> ${showData ? aforoIndex + 1 : ''}</td>
+                        <td style="border: none; padding: 2px 4px; color: white;"><strong>VOL. NOM:</strong> ${showData ? formatNumber(aforo.valor_nominal, 2) : ''}</td>
+                        <td style="border: none; padding: 2px 4px; color: white;"><strong>PUNTA:</strong> ${showData ? '1' : ''}</td>
+                        <td style="border: none; padding: 2px 4px; color: white;"><strong>PASOS:</strong></td>
                     </tr>
                 </table>
                 <div style="position: relative;">
-                    <table style="width: 100%; border-collapse: collapse; font-size: 7px; line-height: 1.2;">
+                    ${diagonalLine}
+                    <table style="width: 100%; border-collapse: collapse; ${fontSizeStyle} line-height: 1.2; table-layout: fixed;">
+                        <colgroup>
+                            <col style="width: 8%;">
+                            <col style="width: 12%;">
+                            <col style="width: 12%;">
+                            <col style="width: 12%;">
+                            <col style="width: 14%;">
+                            <col style="width: 14%;">
+                            <col style="width: 14%;">
+                            <col style="width: 14%;">
+                        </colgroup>
                         <tr class="medidas-header">
-                            <th style="${headerCellStyle}">No.</th>
-                            <th style="${headerCellStyle}">VACÍO<br>(g)</th>
-                            <th style="${headerCellStyle}">LLENO<br>(g)</th>
-                            <th style="${headerCellStyle}">MASA<br>(g)</th>
-                            <th style="${headerCellStyle}">TEMP.<br>AGUA (°C)</th>
-                            <th style="${headerCellStyle}">PRESIÓN<br>(hPa)</th>
-                            <th style="${headerCellStyle}">HUMEDAD<br>(%)</th>
-                            <th style="${headerCellStyle}">TEMP.<br>AMB. (°C)</th>
+                            <th style="border: none; padding: 2px; text-align: center; color: white;">No.</th>
+                            <th style="border: none; padding: 2px; text-align: center; color: white;">VACÍO<br>(g)</th>
+                            <th style="border: none; padding: 2px; text-align: center; color: white;">LLENO<br>(g)</th>
+                            <th style="border: none; padding: 2px; text-align: center; color: white;">MASA<br>(g)</th>
+                            <th style="border: none; padding: 2px; text-align: center; color: white;">TEMP.<br>AGUA (°C)</th>
+                            <th style="border: none; padding: 2px; text-align: center; color: white;">PRESIÓN<br>(hPa)</th>
+                            <th style="border: none; padding: 2px; text-align: center; color: white;">HUMEDAD<br>(%)</th>
+                            <th style="border: none; padding: 2px; text-align: center; color: white;">TEMP.<br>AMB. (°C)</th>
                         </tr>
                         ${[...Array(10)].map((_, i) => {
                             const medicionBruta = showData ? (aforosBrutos[aforoIndex]?.mediciones_ambientales?.[i] || {}) : {};
@@ -616,7 +692,7 @@ function buildMedidasHeader(results) {
                             const masa = showData ? (lleno - vacio) : null;
 
                             return `
-                                <tr>
+                                <tr style="border-top: 1px solid black;">
                                     <td style="${cellStyle} text-align: center;">${i + 1}</td>
                                     <td style="${cellStyle}">${showData ? formatNumber(vacio, 4) : '&nbsp;'}</td>
                                     <td style="${cellStyle}">${showData ? formatNumber(lleno, 6) : '&nbsp;'}</td>
@@ -629,7 +705,6 @@ function buildMedidasHeader(results) {
                             `;
                         }).join('')}
                     </table>
-                    ${diagonalLine}
                 </div>
             </div>
         `;
@@ -638,12 +713,12 @@ function buildMedidasHeader(results) {
 
     // Construir las tablas de aforos en formato 2x2
     const aforosHtml = `
-        <div style="margin-top: 0;">
-            <div style="display: flex; justify-content: space-between; margin-bottom: 0.2cm;">
+        <div style="margin-top: 0.1cm;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 0.1cm;">
                 ${generateAforoTable(0, results)}
                 ${generateAforoTable(1, results)}
             </div>
-            <div style="display: flex; justify-content: space-between;">
+            <div style="display: flex; justify-content: space-between; margin-top: 0.1cm;">
                 ${generateAforoTable(2, results)}
                 ${generateAforoTable(3, results)}
             </div>
@@ -652,20 +727,20 @@ function buildMedidasHeader(results) {
 
     // Tarea 1: Añadir la sección final de Observaciones y Firmas
     const footerHtml = `
-        <div style="margin-top: 0.4cm; font-size: 7px; page-break-inside: avoid;">
+        <div style="margin-top: 0.1cm; font-size: 11px; page-break-inside: avoid;">
             <table style="width: 100%; border-collapse: collapse; border: none;">
                 <!-- Fila con las 3 columnas principales -->
                 <tr style="vertical-align: top; page-break-inside: avoid;">
                     <!-- Columna 1: Observaciones -->
                     <td style="width: 33.33%; padding-right: 0.5cm; border: none;">
-                        <div style="padding: 5px; min-height: 50px;">
+                        <div style="padding: 5px; min-height: 40px; font-size: 11px;">
                             <div style="font-weight: bold;">Observaciones</div>
                             <div style="margin-top: 5px;">${eg.observaciones || ''}</div>
                         </div>
                     </td>
                     <!-- Columna 2: Ajuste -->
                     <td style="width: 33.33%; padding-left: 0.25cm; padding-right: 0.25cm; border: none;">
-                        <div style="padding: 5px; min-height: 50px;">
+                        <div style="padding: 5px; min-height: 40px; font-size: 11px;">
                             <span>¿Se realizó ajuste? S/N</span>
                             <span style="border: 1px solid black; padding: 1px 4px; margin-left: 10px; background-color: #f3f4f6;">
                                 ${eg.ajuste_realizado || 'N'}
@@ -677,9 +752,9 @@ function buildMedidasHeader(results) {
                     </td>
                     <!-- Columna 3: Prueba de Condiciones Iniciales -->
                     <td style="width: 33.33%; padding-left: 0.5cm; border: none;">
-                        <table style="width: 100%; border-collapse: collapse; font-size: 7px;">
+                        <table style="width: 100%; border-collapse: collapse; font-size: 11px;">
                             <tr class="medidas-header">
-                                <th style="border: 1px solid black; padding: 2px; color: white; text-align: center;" colspan="3">Prueba de Condiciones Iniciales</th>
+                                <th style="border: none; padding: 2px; color: white; text-align: center;" colspan="3">Prueba de Condiciones Iniciales</th>
                             </tr>
                             <tr>
                                 <td style="border: 1px solid black; padding: 2px; text-align: center;">${eg.vol_nominal ? formatNumber(eg.vol_nominal / 10, 2) : ''}</td>
@@ -698,12 +773,12 @@ function buildMedidasHeader(results) {
                 <tr style="page-break-inside: avoid;">
                     <td style="padding-top: 0.2cm; text-align: center; border: none;">
                         <div style="border-top: 1px solid black; margin: 0 auto; width: 60%;"></div>
-                        <div style="font-size: 7px; margin-top: 2px;">REALIZÓ</div>
+                        <div style="font-size: 9px; margin-top: 2px;">REALIZÓ</div>
                     </td>
                     <td style="border: none;"></td> <!-- Celda vacía para espaciar -->
                     <td style="padding-top: 0.2cm; text-align: center; border: none;">
                         <div style="border-top: 1px solid black; margin: 0 auto; width: 60%;"></div>
-                        <div style="font-size: 7px; margin-top: 2px;">SUPERVISÓ</div>
+                        <div style="font-size: 9px; margin-top: 2px;">SUPERVISÓ</div>
                     </td>
                 </tr>
             </table>
@@ -713,44 +788,315 @@ function buildMedidasHeader(results) {
     return headerHtml + aforosHtml + footerHtml;
 }
 
-function buildServicioReport(results) {
+function buildServicioReport_PDF(results, chartImage = '') {
     const unidades = results.textos_reporte.unidades || 'µL';
+
+    const formatDate = (dateString) => {
+        if (!dateString) return 'N/A';
+        const date = new Date(dateString + 'T00:00:00');
+        return date.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    };
+
+    const eg = results.textos_reporte.entradas_generales || {};
+
+    let html = `
+        <section>
+            <table style="width: 100%; border-collapse: collapse; font-size: 11px;">
+                <tr class="medidas-header">
+                    <th style="border: none; padding: 4px; color: white; text-align: center;" colspan="6">Rastreabilidad</th>
+                </tr>
+                <tr>
+                    <td style="padding: 4px; font-weight: bold; border: none;">Fecha de Servicio:</td>
+                    <td style="padding: 4px; border: none;">${formatDate(eg.fecha_calibracion)}</td>
+                    <td style="padding: 4px; font-weight: bold; border: none;">Servicio:</td>
+                    <td style="padding: 4px; border: none;">${eg.numero_servicio || ''}</td>
+                    <td style="padding: 4px; font-weight: bold; border: none;">Cotización:</td>
+                    <td style="padding: 4px; border: none;">${eg.cotizacion || ''}</td>
+                </tr>
+            </table>
+        </section>
+
+        <section style="margin-top: 0.3cm;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 11px;">
+                <tr class="medidas-header">
+                    <th style="border: none; padding: 4px; color: white; text-align: center;" colspan="6">Datos del cliente</th>
+                </tr>
+                <tr>
+                    <td style="padding: 4px; font-weight: bold; border: none;">Nombre del cliente:</td>
+                    <td style="padding: 4px; border: none;" colspan="2">${eg.nombre_cliente || ''}</td>
+                    <td style="padding: 4px; font-weight: bold; border: none;">Contacto:</td>
+                    <td style="padding: 4px; border: none;" colspan="2">${eg.contacto_reporte_directo || ''}</td>
+                </tr>
+                <tr>
+                    <td style="padding: 4px; font-weight: bold; border: none;">Dirección:</td>
+                    <td style="padding: 4px; border: none;" colspan="2">${eg.direccion_cliente_reporte || ''}</td>
+                    <td style="padding: 4px; font-weight: bold; border: none;">Teléfono:</td>
+                    <td style="padding: 4px; border: none;" colspan="2">${eg.telefono_cliente_reporte || ''}</td>
+                </tr>
+            </table>
+        </section>
+
+        <section style="margin-top: 0.3cm;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 11px;">
+                <tr class="medidas-header">
+                    <th style="border: none; padding: 4px; color: white; text-align: center;" colspan="6">Datos del instrumento</th>
+                </tr>
+                <tr>
+                    <td style="padding: 4px; font-weight: bold; border: none;">Descripción:</td>
+                    <td style="padding: 4px; border: none;">${eg.descripcion_instrumento || ''}</td>
+                    <td style="padding: 4px; font-weight: bold; border: none;">Marca:</td>
+                    <td style="padding: 4px; border: none;">${eg.marca_instrumento || ''}</td>
+                    <td style="padding: 4px; font-weight: bold; border: none;">Modelo:</td>
+                    <td style="padding: 4px; border: none;">${eg.modelo_instrumento || ''}</td>
+                </tr>
+                <tr>
+                    <td style="padding: 4px; font-weight: bold; border: none;">Serie:</td>
+                    <td style="padding: 4px; border: none;">${eg.serie_instrumento || ''}</td>
+                    <td style="padding: 4px; font-weight: bold; border: none;">Identificación:</td>
+                    <td style="padding: 4px; border: none;">${eg.id_instrumento || ''}</td>
+                    <td style="padding: 4px; font-weight: bold; border: none;">Tipo:</td>
+                    <td style="padding: 4px; border: none;">${eg.tipo_instrumento || ''}</td>
+                </tr>
+                 <tr>
+                    <td style="padding: 4px; font-weight: bold; border: none;">Intervalo:</td>
+                    <td style="padding: 4px; border: none;">${eg.intervalo_min_reporte || ''} a ${eg.intervalo_max_reporte || ''} ${unidades}</td>
+                    <td style="padding: 4px; font-weight: bold; border: none;">Volumen:</td>
+                    <td style="padding: 4px; border: none;">${eg.tipo_volumen || ''}</td>
+                    <td style="padding: 4px; font-weight: bold; border: none;">Resolución:</td>
+                    <td style="padding: 4px; border: none;">${eg.div_min_valor || ''} ${eg.div_min_unidad || ''}</td>
+                </tr>
+            </table>
+        </section>
+
+        <section style="margin-top: 0.3cm;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 11px;">
+                <tr class="medidas-header">
+                    <th style="border: none; padding: 4px; color: white; text-align: center;" colspan="4">Condiciones ambientales</th>
+                </tr>
+                <tr>
+                    <td style="padding: 4px; font-weight: bold; border: none;">Temperatura del líquido de calibración:</td>
+                    <td style="padding: 4px; border: none;">${results.condiciones_finales.temp_liquido.toFixed(2)} °C</td>
+                    <td style="padding: 4px; font-weight: bold; border: none;">Temperatura ambiente:</td>
+                    <td style="padding: 4px; border: none;">${results.condiciones_finales.temp_ambiente.toFixed(2)} °C</td>
+                </tr>
+                <tr>
+                    <td style="padding: 4px; border: none; font-style: italic; color: #555;" colspan="2">Calibration Liquid Temperature</td>
+                    <td style="padding: 4px; border: none; font-style: italic; color: #555;" colspan="2">Room temperature</td>
+                </tr>
+                <tr>
+                    <td style="padding: 4px; font-weight: bold; border: none;">Presión atmosférica:</td>
+                    <td style="padding: 4px; border: none;">${results.condiciones_finales.presion.toFixed(2)} hPa</td>
+                    <td style="padding: 4px; font-weight: bold; border: none;">Humedad Relativa:</td>
+                    <td style="padding: 4px; border: none;">${results.condiciones_finales.humedad.toFixed(2)} %HR</td>
+                </tr>
+                <tr>
+                    <td style="padding: 4px; border: none; font-style: italic; color: #555;" colspan="2">Atmospheric Pressure</td>
+                    <td style="padding: 4px; border: none; font-style: italic; color: #555;" colspan="2">Relative Humidity</td>
+                </tr>
+            </table>
+        </section>
+
+        <section style="margin-top: 0.3cm;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 11px;">
+                <tr class="medidas-header">
+                    <th style="border: none; padding: 4px; color: white; text-align: center;" colspan="2">Instrumentos utilizados</th>
+                </tr>
+                <tr>
+                    <td style="padding: 4px; font-weight: bold; border: none; vertical-align: top; width: 20%;">Patrones de Referencia:</td>
+                    <td style="padding: 4px; border: none;">${results.textos_reporte.especificacion_principal}</td>
+                </tr>
+                <tr>
+                    <td style="padding: 4px; font-weight: bold; border: none; vertical-align: top;">Equipo Auxiliar:</td>
+                    <td style="padding: 4px; border: none;">${results.textos_reporte.especificacion_ca}</td>
+                </tr>
+                <tr>
+                    <td style="padding: 4px; border: none;"></td>
+                    <td style="padding: 4px; border: none;">${results.textos_reporte.especificacion_ta}</td>
+                </tr>
+                <tr>
+                    <td style="padding: 4px; font-weight: bold; border: none; vertical-align: top;">Lugar de Servicio:</td>
+                    <td style="padding: 4px; border: none;">${results.textos_reporte.lugar_servicio}</td>
+                </tr>
+            </table>
+        </section>
+
+        <!-- Mantenimiento -->
+        <section style="margin-top: 0.3cm;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 11px;">
+                <tr class="medidas-header">
+                    <th style="border: none; padding: 4px; color: white; text-align: center;" colspan="2">Mantenimiento</th>
+                </tr>
+                <tr>
+                    <td style="padding: 4px; border: none; width: 50%; vertical-align: top;">
+                        ${eg.mantenimientos.includes('Limpieza externa') ? '&#x2713;' : '&#x2717;'} Limpieza externa<br>
+                        ${eg.mantenimientos.includes('Limpieza interna') ? '&#x2713;' : '&#x2717;'} Limpieza interna<br>
+                        ${eg.mantenimientos.includes('Revisión de resortes') ? '&#x2713;' : '&#x2717;'} Revisión de resortes
+                    </td>
+                    <td style="padding: 4px; border: none; width: 50%; vertical-align: top;">
+                        ${eg.mantenimientos.includes('Revisión de empaques') ? '&#x2713;' : '&#x2717;'} Revisión de empaques<br>
+                        ${eg.mantenimientos.includes('Lubricación') ? '&#x2713;' : '&#x2717;'} Lubricación<br>
+                        ${eg.mantenimientos.includes('Ajuste') ? '&#x2713;' : '&#x2717;'} Ajuste
+                    </td>
+                </tr>
+            </table>
+        </section>
+
+        <!-- Resultados del Servicio -->
+        <section style="margin-top: 0.3cm;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 11px;">
+                <tr class="medidas-header">
+                    <th style="border: none; padding: 4px; color: white; text-align: center;">Resultados del Servicio</th>
+                </tr>
+                <tr>
+                    <td style="padding: 8px; border: 1px solid #ccc; background-color: #f8f9fa;">${results.textos_reporte.introduccion}</td>
+                </tr>
+            </table>
+        </section>
+
+        <!-- Tabla de Mediciones -->
+        <section style="margin-top: 0.3cm;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 10px; text-align: center;">
+                <thead class="medidas-header">
+                    <tr>
+                        <th style="border: 1px solid #999; padding: 4px; font-weight: bold; color: white;">No.</th>
+                        ${results.aforos.map(aforo => `
+                            <th style="border: 1px solid #999; padding: 4px; font-weight: bold; color: white;">${aforo.valor_nominal.toFixed(0)} ${unidades}</th>
+                        `).join('')}
+                    </tr>
+                </thead>
+                <tbody>
+                    ${[...Array(10).keys()].map(i => `
+                        <tr>
+                            <td style="border: 1px solid #999; padding: 4px; font-weight: bold;">${i + 1}</td>
+                            ${results.aforos.map(aforo => `
+                                <td style="border: 1px solid #999; padding: 4px;">${(aforo.mediciones_volumen_ul[i] || 0).toFixed(2).replace('.', ',')}</td>
+                            `).join('')}
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+        </section>
+
+        <!-- Tabla de Resumen de Errores -->
+        <section style="margin-top: 0.3cm;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 11px; text-align: center;">
+                <thead class="medidas-header">
+                    <tr>
+                        <th style="border: 1px solid #999; padding: 4px; font-weight: bold; color: white;">CANAL</th>
+                        <th style="border: 1px solid #999; padding: 4px; font-weight: bold; color: white;">VALOR NOMINAL</th>
+                        <th style="border: 1px solid #999; padding: 4px; font-weight: bold; color: white;">VOLUMEN DEL *IBC (V20 °C)</th>
+                        <th style="border: 1px solid #999; padding: 4px; font-weight: bold; color: white;">ERROR DE MEDIDA</th>
+                    </tr>
+                    <tr>
+                        <th style="border: 1px solid #999; padding: 4px; font-weight: bold; color: white;"></th>
+                        <th style="border: 1px solid #999; padding: 4px; font-weight: bold; color: white;">${unidades}</th>
+                        <th style="border: 1px solid #999; padding: 4px; font-weight: bold; color: white;">${unidades}</th>
+                        <th style="border: 1px solid #999; padding: 4px; font-weight: bold; color: white;">${unidades}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${results.aforos.map((aforo, index) => `
+                        <tr>
+                            <td style="border: 1px solid #999; padding: 4px; font-weight: bold;">${index + 1}</td>
+                            <td style="border: 1px solid #999; padding: 4px;">${aforo.valor_nominal.toFixed(2).replace('.', ',')}</td>
+                            <td style="border: 1px solid #999; padding: 4px;">${aforo.promedio_volumen_ul.toFixed(2).replace('.', ',')}</td>
+                            <td style="border: 1px solid #999; padding: 4px;">${aforo.error_medida_ul.toFixed(2).replace('.', ',')}</td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+            <p style="font-size: 10px; margin-top: 5px;">* IBC Instrumento Bajo Calibración</p>
+        </section>
+
+        <!-- Gráfico -->
+        <section style="margin-top: 0.5cm; text-align: center; page-break-inside: avoid;">
+            <h3 style="font-size: 12px; font-weight: bold; margin-bottom: 0.3cm; text-align: center;">Error de medida Vs. Valor de referencia</h3>
+            ${chartImage ? `
+                <img src="${chartImage}" style="max-width: 70%; height: auto; margin: 0 auto; display: block;">
+            ` : `
+                <div style="border: 1px dashed #ccc; padding: 20px; color: #777;">
+                    Gráfico no disponible.
+                </div>
+            `}
+        </section>
+
+        <!-- Observaciones -->
+        <section style="margin-top: 0.5cm; page-break-inside: avoid;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 11px;">
+                <tr class="medidas-header">
+                    <th style="border: none; padding: 4px; color: white; text-align: center;">Observaciones</th>
+                </tr>
+                <tr>
+                    <td style="padding: 8px; border: 1px solid #ccc; background-color: #f8f9fa;">${results.textos_reporte.observaciones}</td>
+                </tr>
+            </table>
+        </section>
+
+        <!-- Firmas -->
+        <section style="margin-top: 2.5cm; page-break-inside: avoid; font-size: 11px;">
+            ${(() => { const firma = results.textos_reporte.firma_gerente || {}; return `
+            <table style="width: 100%; border-collapse: collapse; border: none;">
+                <tr>
+                    <td style="width: 50%; text-align: center; padding: 0 1cm; border: none;">
+                        <div style="border-top: 1px solid #333; margin-bottom: 5px;"></div>
+                        <div>${firma.nombre || ''}</div>
+                        <div style="font-weight: bold;">${firma.cargo || ''}</div>
+                    </td>
+                    <td style="width: 50%; text-align: center; padding: 0 1cm; border: none;">
+                        <div style="border-top: 1px solid #333; margin-bottom: 5px;"></div>
+                        <div>Nombre y Firma</div>
+                        <div style="font-weight: bold;">Cliente</div>
+                    </td>
+                </tr>
+            </table>
+            `})()}
+        </section>
+    `;
+
+    return html;
+}
+
+function buildServicioReport_HTML(results) {
+    const unidades = results.textos_reporte.unidades || 'µL';
+
+    const eg = results.textos_reporte.entradas_generales || {};
+    const cf = results.condiciones_finales || {};
 
     let html = `
         <section class="bg-white p-6 rounded-lg shadow-md border border-gray-200">
-            <h1 class="text-xl font-semibold mb-4 border-b pb-2">Reporte de Servicio</h1>
-            
+            <h1 class="text-2xl font-bold text-center mb-6">Reporte de Servicio</h1>
+
             <!-- Condiciones Ambientales -->
-            <h3 class="text-lg font-semibold mt-6 mb-2">Condiciones ambientales</h3>
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 text-center p-4 border rounded-lg bg-gray-50">
-                <div>
-                    <p class="text-sm font-medium text-gray-700">Temperatura del líquido de calibración</p>
-                    <p class="text-xs italic text-gray-500">Calibration liquid temperature</p>
-                    <p class="text-lg font-bold text-blue-600 mt-1">${results.condiciones_finales.temp_liquido.toFixed(2)} °C</p>
-                </div>
-                <div>
-                    <p class="text-sm font-medium text-gray-700">Temperatura ambiente</p>
-                    <p class="text-xs italic text-gray-500">Ambient temperature</p>
-                    <p class="text-lg font-bold text-blue-600 mt-1">${results.condiciones_finales.temp_ambiente.toFixed(2)} °C</p>
-                </div>
-                <div>
-                    <p class="text-sm font-medium text-gray-700">Presión atmosférica</p>
-                    <p class="text-xs italic text-gray-500">Atmospheric pressure</p>
-                    <p class="text-lg font-bold text-blue-600 mt-1">${results.condiciones_finales.presion.toFixed(2)} hPa</p>
-                </div>
-                <div>
-                    <p class="text-sm font-medium text-gray-700">Humedad Relativa</p>
-                    <p class="text-xs italic text-gray-500">Relative humidity</p>
-                    <p class="text-lg font-bold text-blue-600 mt-1">${results.condiciones_finales.humedad.toFixed(2)} %</p>
-                </div>
-            </div>
-            
+            <h3 class="text-lg font-semibold mt-6 mb-2">
+                Condiciones ambientales
+                <span class="block text-sm font-normal italic text-gray-500">Ambient conditions</span>
+            </h3>
+            <table class="min-w-full border text-center text-sm">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-4 py-2">Temperatura del líquido de calibración<br><em class="font-normal">Calibration liquid temperature</em></th>
+                        <th class="px-4 py-2">Temperatura ambiente<br><em class="font-normal">Ambient temperature</em></th>
+                        <th class="px-4 py-2">Presión atmosférica<br><em class="font-normal">Atmospheric pressure</em></th>
+                        <th class="px-4 py-2">Humedad Relativa<br><em class="font-normal">Relative humidity</em></th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white">
+                    <tr>
+                        <td class="px-4 py-2">${cf.temp_liquido.toFixed(2)} °C</td>
+                        <td class="px-4 py-2">${cf.temp_ambiente.toFixed(2)} °C</td>
+                        <td class="px-4 py-2">${cf.presion.toFixed(2)} hPa</td>
+                        <td class="px-4 py-2">${cf.humedad.toFixed(2)} %</td>
+                    </tr>
+                </tbody>
+            </table>
+
             <!-- Instrumentos Utilizados -->
-            <h3 class="text-lg font-semibold mt-6 mb-2">Instrumentos utilizados</h3>
-            <div class="text-sm p-4 border rounded-lg bg-gray-50 space-y-2">
-                <p>
-                    <strong>Patrones de Referencia:</strong> ${results.textos_reporte.especificacion_principal}
-                </p>
+            <h3 class="text-lg font-semibold mt-8 mb-2">
+                Instrumentos utilizados
+                <span class="block text-sm font-normal italic text-gray-500">Instruments used</span>
+            </h3>
+            <div class="text-sm p-4 border rounded-lg bg-gray-50 space-y-3">
+                <p><strong>Patrones de Referencia:</strong> ${results.textos_reporte.especificacion_principal}</p>
                 <div>
                     <strong>Equipo Auxiliar:</strong>
                     <ul class="list-disc list-inside pl-4 mt-1">
@@ -758,85 +1104,80 @@ function buildServicioReport(results) {
                         <li>${results.textos_reporte.especificacion_ca}</li>
                     </ul>
                 </div>
-                <p>
-                    <strong>Lugar de Servicio:</strong> ${results.textos_reporte.lugar_servicio}
-                </p>
+                <p><strong>Lugar de Servicio:</strong> ${results.textos_reporte.lugar_servicio}</p>
             </div>
 
-            ${
-                (results.textos_reporte.mantenimientos && results.textos_reporte.mantenimientos.length > 0)
-                ? (() => {
-                    const todasLasTareas = ["Limpieza externa", "Revisión de empaques", "Limpieza interna", "Lubricación", "Revisión de resortes", "Ajuste"];
-                    const tareasRealizadas = new Set(results.textos_reporte.mantenimientos);
-                    
-                    const checkboxesHtml = todasLasTareas.map(tarea => {
-                        const isChecked = tareasRealizadas.has(tarea);
-                        const checkmarkSvg = `<svg class="w-4 h-4 text-white" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" /></svg>`;
-                        
-                        return `
-                            <div class="flex items-center space-x-2">
-                                <div class="w-5 h-5 flex items-center justify-center rounded border ${isChecked ? 'bg-green-500 border-green-500' : 'border-gray-300'}">
-                                    ${isChecked ? checkmarkSvg : ''}
-                                </div>
-                                <span>${tarea}</span>
-                            </div>`;
-                    }).join('');
-
-                    return `<!-- Mantenimiento Realizado -->
-                            <h3 class="text-lg font-semibold mt-6 mb-2">Mantenimiento Realizado</h3>
-                            <div class="text-sm p-4 border rounded-lg bg-gray-50">
-                                <div class="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-2">
-                                    ${checkboxesHtml}
-                                </div>
-                            </div>`;
-                })()
-                : ''
-            }
-
-            <!-- Tabla de Resumen -->
-            <h3 class="text-lg font-semibold mt-6 mb-2">Resultados del Servicio</h3>
-            <p class="text-sm text-gray-600 mb-4 p-4 border-l-4 border-blue-500 bg-blue-50">
+            <!-- Resultados del Servicio -->
+            <h3 class="text-lg font-semibold mt-8 mb-2">
+                Resultados del Servicio
+                <span class="block text-sm font-normal italic text-gray-500">Service Results</span>
+            </h3>
+            <p class="text-base text-gray-600 mb-4 p-4 border-l-4 border-blue-500 bg-blue-50">
                 ${results.textos_reporte.introduccion}
             </p>
 
-            <table class="min-w-full divide-y divide-gray-200">
+            <!-- Tabla de Mediciones Detalladas -->
+            <table class="min-w-full border text-center text-sm mb-6">
                 <thead class="bg-gray-50">
                     <tr>
-                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">CANAL</th>
-                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Valor Nominal (${unidades})</th>
-                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-700 uppercase">VOLUMEN DEL *IBC (V20 °C) (${unidades})</th>
-                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-700 uppercase">Error de Medida (${unidades})</th>
+                        <th class="px-2 py-2">No.</th>
+                        ${results.aforos.map(a => `<th class="px-2 py-2">${a.valor_nominal.toFixed(2)} ${unidades}</th>`).join('')}
                     </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200">
-                    ${results.aforos.map((aforo, index) => `
-                        <tr>
-                            <td class="px-4 py-2 text-sm">${index + 1}</td>
-                            <td class="px-4 py-2 text-sm">${aforo.valor_nominal.toFixed(2)}</td>
-                            <td class="px-4 py-2 text-sm">${aforo.promedio_volumen_ul.toFixed(2)}</td>
-                            <td class="px-4 py-2 text-sm font-medium ${aforo.error_medida_ul >= 0 ? 'text-blue-600' : 'text-red-600'}">${aforo.error_medida_ul.toFixed(2)}</td>
+                    ${[...Array(10).keys()].map(i => `
+                        <tr class="divide-x divide-gray-200">
+                            <td class="px-2 py-1">${i + 1}</td>
+                            ${results.aforos.map(a => `<td class="px-2 py-1">${a.mediciones_volumen_ul[i].toFixed(2)}</td>`).join('')}
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+
+            <!-- Tabla de Resumen de Resultados -->
+            <table class="min-w-full border text-center text-sm">
+                <thead class="bg-gray-50">
+                    <tr class="divide-x divide-gray-200">
+                        <th class="px-2 py-2">CANAL</th>
+                        <th class="px-2 py-2">Valor Nominal (${unidades})</th>
+                        <th class="px-2 py-2">VOLUMEN DEL *IBC (V20 °C) (${unidades})</th>
+                        <th class="px-2 py-2">Error de Medida (${unidades})</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    ${results.aforos.map((a, index) => `
+                        <tr class="divide-x divide-gray-200">
+                            <td class="px-2 py-2">${index + 1}</td>
+                            <td class="px-2 py-2">${a.valor_nominal.toFixed(2)}</td>
+                            <td class="px-2 py-2">${a.promedio_volumen_ul.toFixed(2)}</td>
+                            <td class="px-2 py-2 font-medium ${a.error_medida_ul >= 0 ? 'text-blue-600' : 'text-red-600'}">
+                                ${a.error_medida_ul.toFixed(2)}
+                            </td>
                         </tr>
                     `).join('')}
                 </tbody>
             </table>
             <p class="text-xs text-gray-500 mt-2">* IBC Instrumento Bajo Calibración</p>
 
-            <!-- Gráfico -->
-            <h3 class="text-lg font-semibold mt-6 mb-2 chart-container">Gráfico de Errores</h3>
-            <div class="p-4 border rounded-lg bg-gray-50">
-                 <canvas id="errorChart"></canvas>
+            <!-- Gráfico de Errores -->
+            <h3 class="text-lg font-semibold mt-8 mb-2 text-center">Gráfico de Errores</h3>
+            <div class="p-4 border rounded-lg bg-gray-50 h-80" style="position: relative;">
+                <div class="mx-auto h-full" style="max-width: 70%; position: relative;">
+                    <canvas id="errorChart"></canvas>
+                </div>
             </div>
 
-            <!-- Observaciones -->
-             <h3 class="text-lg font-semibold mt-6 mb-2">Observaciones</h3>
-             <p class="text-sm p-4 border rounded-lg bg-gray-50">${results.textos_reporte.observaciones}</p>
         </section>
-    `;
 
+        <!-- Observaciones -->
+        <h3 class="text-lg font-semibold mt-8 mb-2">Observaciones</h3>
+        <p class="text-sm p-4 border rounded-lg bg-gray-50">${results.textos_reporte.observaciones}</p>
+    `;
     return html;
 }
 
 function displayResults(results) {
+    window.latestResults = results; // Guardar resultados para la exportación
     const serviceReportContainer = document.getElementById('results-container');
     const certificateContainer = document.getElementById('certificate-container');
     
@@ -848,8 +1189,8 @@ function displayResults(results) {
         document.body.appendChild(medidasReportContainer);
     };
 
-    // Construir el contenido del reporte de Servicio
-    const html = buildServicioReport(results);
+    // Construir el contenido del reporte de Servicio para la VISTA PREVIA HTML
+    const html = buildServicioReport_HTML(results);
     serviceReportContainer.innerHTML = html;
 
     // Construir el contenido del reporte de Medidas
@@ -921,13 +1262,13 @@ function displayResults(results) {
                 <span class="block text-sm font-normal italic text-gray-500">Calibration Results</span>
             </h3>
 
-            <p class="text-sm text-gray-600 mb-4 p-4 border-l-4 border-blue-500 bg-blue-50">
+            <p class="text-base text-gray-600 mb-4 p-4 border-l-4 border-blue-500 bg-blue-50" style="font-size: 11px;">
                 ${results.textos_reporte.introduccion_certificado}
             </p>
 
             <!-- Tabla de Resultados del Certificado -->
             <div class="mb-6">
-                <table class="min-w-full border text-center">
+                <table class="min-w-full border text-center" style="font-size: 10px;">
                     <thead class="bg-gray-50">
                         <tr class="divide-x divide-gray-200 text-xs font-medium text-gray-500 uppercase">
                             <th class="px-2 py-2">CANAL</th>
@@ -959,7 +1300,7 @@ function displayResults(results) {
                         `).join('')}
                     </tbody>
                 </table>
-                <p class="text-xs text-gray-500 mt-2">* IBC Instrumento Bajo Calibración</p>
+                <p class="text-sm text-gray-500 mt-2" style="font-size: 10px;">* IBC Instrumento Bajo Calibración</p>
 
                 <!-- Gráfico de Incertidumbre -->
                 <h3 class="text-lg font-semibold mt-8 mb-2 chart-container">Error de medida ±Incertidumbre de medida Vs. Valor de referencia</h3>
@@ -972,7 +1313,7 @@ function displayResults(results) {
                     Notas y Observaciones
                     <span class="block text-sm font-normal italic text-gray-500">Notes and Observations</span>
                 </h3>
-                <div class="text-xs text-gray-600 p-4 border rounded-lg bg-gray-50 space-y-3">
+                <div class="text-sm text-gray-600 p-4 border rounded-lg bg-gray-50 space-y-3" style="font-size: 10px;">
                     ${results.textos_reporte.notas_certificado.map(nota => `<p>${nota}</p>`).join('')}
                     
                     <!-- Observación dinámica -->
@@ -1005,7 +1346,7 @@ function displayResults(results) {
     const yMax = Math.max(...yValues);
 
     const xRange = xMax - xMin;
-    const yRange = yMax - yMin;
+    const yRange = yMax - yMin; // <-- CORREGIDO
 
     // Añadir un 15% de espacio extra a cada lado de los ejes
     const xPadding = xRange > 0 ? xRange * 0.15 : 2;
@@ -1030,7 +1371,10 @@ function displayResults(results) {
     serviceReportContainer.classList.remove('hidden');
     certificateContainer.classList.remove('hidden');
 
-    // Renderizar gráfico de Errores (Reporte de Servicio)
+    // Destruir el gráfico anterior si existe
+    if(window.myChart instanceof Chart) { window.myChart.destroy(); }
+
+    // // Renderizar gráfico de Errores (Reporte de Servicio)
     const errorChartCtx = document.getElementById('errorChart').getContext('2d');
     if(myChart) { myChart.destroy(); }
     myChart = new Chart(errorChartCtx, {
@@ -1052,6 +1396,12 @@ function displayResults(results) {
                 }
             },
             plugins: {
+                title: {
+                    display: true,
+                    text: 'Error de medida Vs. Valor de referencia',
+                    font: { size: 16 },
+                    padding: { top: 10, bottom: 20 }
+                },
                 legend: { 
                     display: false 
                 },
@@ -1077,95 +1427,98 @@ function displayResults(results) {
         }
     });
 
+    // El gráfico está listo. La imagen se generará bajo demanda en handleExportPdf.
+    // No se necesita una promesa aquí.
+
     // --- Renderizar el nuevo gráfico de Incertidumbre ---
 
-    const errorIncertidumbreData = {
-        datasets: [
-            {
-                label: 'Rango de Incertidumbre',
-                data: results.aforos.map(a => ({
-                    x: a.promedio_volumen_ul,
-                    y: [a.error_medida_ul - a.incertidumbre_expandida, a.error_medida_ul + a.incertidumbre_expandida]
-                })),
-                backgroundColor: 'rgba(255, 99, 132, 0.2)', // Rosa semitransparente
-                borderColor: 'rgba(255, 99, 132, 1)', // Rosa sólido
-                borderWidth: 1,
-                barPercentage: 0.05, // Hace las barras de error muy delgadas para que parezcan líneas
-                categoryPercentage: 1.0,
-                order: 2 // Asegura que las barras se dibujen detrás de los puntos
-            },
-            {
-                label: 'Error de Medida',
-                data: results.aforos.map(a => ({
-                    x: a.promedio_volumen_ul,
-                    y: a.error_medida_ul
-                })),
-                backgroundColor: 'rgba(54, 162, 235, 1)',
-                borderColor: 'rgba(54, 162, 235, 1)',
-                type: 'scatter',
-                pointRadius: 6,
-                pointHoverRadius: 8,
-                order: 1 // Asegura que los puntos se dibujen encima de las barras
-            }
-        ]
-    };
+    // const errorIncertidumbreData = {
+    //     datasets: [
+    //         {
+    //             label: 'Rango de Incertidumbre',
+    //             data: results.aforos.map(a => ({
+    //                 x: a.promedio_volumen_ul,
+    //                 y: [a.error_medida_ul - a.incertidumbre_expandida, a.error_medida_ul + a.incertidumbre_expandida]
+    //             })),
+    //             backgroundColor: 'rgba(255, 99, 132, 0.2)', // Rosa semitransparente
+    //             borderColor: 'rgba(255, 99, 132, 1)', // Rosa sólido
+    //             borderWidth: 1,
+    //             barPercentage: 0.05, // Hace las barras de error muy delgadas para que parezcan líneas
+    //             categoryPercentage: 1.0,
+    //             order: 2 // Asegura que las barras se dibujen detrás de los puntos
+    //         },
+    //         {
+    //             label: 'Error de Medida',
+    //             data: results.aforos.map(a => ({
+    //                 x: a.promedio_volumen_ul,
+    //                 y: a.error_medida_ul
+    //             })),
+    //             backgroundColor: 'rgba(54, 162, 235, 1)',
+    //             borderColor: 'rgba(54, 162, 235, 1)',
+    //             type: 'scatter',
+    //             pointRadius: 6,
+    //             pointHoverRadius: 8,
+    //             order: 1 // Asegura que los puntos se dibujen encima de las barras
+    //         }
+    //     ]
+    // };
 
-    // Renderizar gráfico de Incertidumbre (Certificado)
-    if (window.errorIncertidumbreChart instanceof Chart) { window.errorIncertidumbreChart.destroy(); }
-    const errorIncertidumbreCtx = document.getElementById('errorIncertidumbreChart').getContext('2d');
-    window.errorIncertidumbreChart = new Chart(errorIncertidumbreCtx, {
-        type: 'bar', // El tipo base es 'bar' para las barras de error
-        data: errorIncertidumbreData,
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            scales: {
-                y: {
-                    min: -0.10,
-                    max: 0.07,
-                    ticks: {
-                        stepSize: 0.01
-                    },
-                    title: { 
-                        display: false
-                    }
-                },
-                x: {
-                    type: 'linear',
-                    position: 'bottom',
-                    grace: '10%'
-                }
-            },
-            plugins: {
-                legend: {
-                    display: false
-                },
-                datalabels: {
-                    display: true,
-                    align: 'bottom',
-                    offset: 8,
-                    color: '#444',
-                    font: {
-                        weight: 'bold',
-                        size: 10,
-                    },
-                    formatter: (value, context) => {
-                        // Mostrar solo en el dataset de scatter (puntos)
-                        if (context.dataset.type === 'scatter') {
-                            return value.x.toFixed(2);
-                        }
-                        return null;
-                    }
-                },
-                tooltip: {
-                    mode: 'index',
-                    intersect: false,
-                }
-            }
-        }
-    });
+    // // Renderizar gráfico de Incertidumbre (Certificado)
+    // if (window.errorIncertidumbreChart instanceof Chart) { window.errorIncertidumbreChart.destroy(); }
+    // const errorIncertidumbreCtx = document.getElementById('errorIncertidumbreChart').getContext('2d');
+    // window.errorIncertidumbreChart = new Chart(errorIncertidumbreCtx, {
+    //     type: 'bar', // El tipo base es 'bar' para las barras de error
+    //     data: errorIncertidumbreData,
+    //     options: {
+    //         responsive: true,
+    //         maintainAspectRatio: false,
+    //         scales: {
+    //             y: {
+    //                 min: -0.10,
+    //                 max: 0.07,
+    //                 ticks: {
+    //                     stepSize: 0.01
+    //                 },
+    //                 title: { 
+    //                     display: false
+    //                 }
+    //             },
+    //             x: {
+    //                 type: 'linear',
+    //                 position: 'bottom',
+    //                 grace: '10%'
+    //             }
+    //         },
+    //         plugins: {
+    //             legend: {
+    //                 display: false
+    //             },
+    //             datalabels: {
+    //                 display: true,
+    //                 align: 'bottom',
+    //                 offset: 8,
+    //                 color: '#444',
+    //                 font: {
+    //                     weight: 'bold',
+    //                     size: 10,
+    //                 },
+    //                 formatter: (value, context) => {
+    //                     // Mostrar solo en el dataset de scatter (puntos)
+    //                     if (context.dataset.type === 'scatter') {
+    //                         return value.x.toFixed(2);
+    //                     }
+    //                     return null;
+    //                 }
+    //             },
+    //             tooltip: {
+    //                 mode: 'index',
+    //                 intersect: false,
+    //             }
+    //         }
+    //     }
+    // });
+
 }
-
 const syncFields = [ // CORREGIDO: IDs no existían, ahora se usan los correctos.
     { from: 'direccion_cliente_reporte', to: 'direccion_cliente' }, // Ejemplo, ajusta según tu necesidad
     { from: 'correo_cliente_reporte', to: 'correo_cliente' },
@@ -1209,4 +1562,5 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Carga inicial
     clearForm();
+    loadSiteConfig();
 });

@@ -75,7 +75,11 @@ def calcular_ruta():
              return jsonify({"error": "Estructura de datos incompleta. Faltan claves principales."}), 400
 
         resultados_finales = calculadora.procesar_todos_los_aforos(data)
-        
+
+        # Save results for Streamlit dashboard
+        with open('results.json', 'w') as f:
+            json.dump(resultados_finales, f)
+
         return jsonify(resultados_finales)
 
     except (ValueError, TypeError) as e:

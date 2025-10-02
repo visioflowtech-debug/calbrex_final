@@ -178,6 +178,7 @@ def generar_textos_reporte(entradas_generales, resultados_aforos, especificacion
         "procedimiento_utilizado": procedimiento_utilizado,
         "mantenimientos": mantenimientos_realizados,
         "entradas_generales": eg,
+        "firma_gerente": site_config.get('firma_gerente', {}),
         "notas_certificado": site_config.get('notas_observaciones_certificado', []),
         "unidades": eg.get('unidades', 'µL')
     }
