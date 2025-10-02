@@ -540,7 +540,7 @@ function buildMedidasHeader(results) {
     };
 
     const headerHtml = `
-    <div style="margin-top: 0;">
+    <div style="margin-top: 0.2cm;">
         <table style="width: 100%; border-collapse: collapse; border-spacing: 0;">
             <tbody style="font-size: 7px;">
                 <tr>
@@ -652,7 +652,7 @@ function buildMedidasHeader(results) {
 
     // Tarea 1: Añadir la sección final de Observaciones y Firmas
     const footerHtml = `
-        <div style="margin-top: 0.3cm; font-size: 7px; page-break-inside: avoid;">
+        <div style="margin-top: 0.4cm; font-size: 7px; page-break-inside: avoid;">
             <table style="width: 100%; border-collapse: collapse; border: none;">
                 <!-- Fila con las 3 columnas principales -->
                 <tr style="vertical-align: top; page-break-inside: avoid;">
@@ -713,19 +713,8 @@ function buildMedidasHeader(results) {
     return headerHtml + aforosHtml + footerHtml;
 }
 
-function displayResults(results) {
-    const serviceReportContainer = document.getElementById('results-container');
-    const certificateContainer = document.getElementById('certificate-container');
+function buildServicioReport(results) {
     const unidades = results.textos_reporte.unidades || 'µL';
-    
-    // Crear un contenedor específico para el reporte de medidas
-    const medidasReportContainer = document.getElementById('medidas-report-container') || document.createElement('div');
-    if (!medidasReportContainer.id) {
-        medidasReportContainer.id = 'medidas-report-container';
-        medidasReportContainer.style.display = 'none'; // Oculto, solo para la exportación
-        document.body.appendChild(medidasReportContainer);
-    };
-
 
     let html = `
         <section class="bg-white p-6 rounded-lg shadow-md border border-gray-200">
@@ -810,35 +799,6 @@ function displayResults(results) {
                 ${results.textos_reporte.introduccion}
             </p>
 
-            <!-- Tabla de Mediciones Individuales -->
-            <div id="mediciones-detalladas-tabla" class="mb-6">
-                <table class="min-w-full divide-y divide-gray-200 border">
-                    <thead class="bg-gray-50">
-                        <tr>
-                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">No.</th>
-                            ${results.aforos.map(aforo => `<th class="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase">${aforo.valor_nominal.toFixed(2)} ${unidades}</th>`).join('')}
-                        </tr>
-                    </thead>
-                    <tbody class="bg-white divide-y divide-gray-200">
-                        ${[...Array(10).keys()].map(i => `
-                            <tr>
-                                <td class="px-4 py-2 text-sm font-medium">${i + 1}</td>
-                                <td class="px-4 py-2 text-sm text-center">
-                                    ${results.aforos[0].mediciones_volumen_ul[i] ? results.aforos[0].mediciones_volumen_ul[i].toFixed(2) : 'N/A'}
-                                </td>
-                                <td class="px-4 py-2 text-sm text-center">
-                                    ${results.aforos[1].mediciones_volumen_ul[i] ? results.aforos[1].mediciones_volumen_ul[i].toFixed(2) : 'N/A'}
-                                </td>
-                                <td class="px-4 py-2 text-sm text-center">
-                                    ${results.aforos[2].mediciones_volumen_ul[i] ? results.aforos[2].mediciones_volumen_ul[i].toFixed(2) : 'N/A'}
-                                </td>
-                            </tr>
-                        `).join('')}
-                    </tbody>
-                </table>
-            </div>
-
-
             <table class="min-w-full divide-y divide-gray-200">
                 <thead class="bg-gray-50">
                     <tr>
@@ -849,18 +809,14 @@ function displayResults(results) {
                     </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200">
-    `;
-    results.aforos.forEach((aforo, index) => {
-        html += `
-            <tr>
-                <td class="px-4 py-2 text-sm">${index + 1}</td>
-                <td class="px-4 py-2 text-sm">${aforo.valor_nominal.toFixed(2)}</td>
-                <td class="px-4 py-2 text-sm">${aforo.promedio_volumen_ul.toFixed(2)}</td>
-                <td class="px-4 py-2 text-sm font-medium ${aforo.error_medida_ul >= 0 ? 'text-blue-600' : 'text-red-600'}">${aforo.error_medida_ul.toFixed(2)}</td>
-            </tr>
-        `;
-    });
-    html += `
+                    ${results.aforos.map((aforo, index) => `
+                        <tr>
+                            <td class="px-4 py-2 text-sm">${index + 1}</td>
+                            <td class="px-4 py-2 text-sm">${aforo.valor_nominal.toFixed(2)}</td>
+                            <td class="px-4 py-2 text-sm">${aforo.promedio_volumen_ul.toFixed(2)}</td>
+                            <td class="px-4 py-2 text-sm font-medium ${aforo.error_medida_ul >= 0 ? 'text-blue-600' : 'text-red-600'}">${aforo.error_medida_ul.toFixed(2)}</td>
+                        </tr>
+                    `).join('')}
                 </tbody>
             </table>
             <p class="text-xs text-gray-500 mt-2">* IBC Instrumento Bajo Calibración</p>
@@ -877,8 +833,24 @@ function displayResults(results) {
         </section>
     `;
 
+    return html;
+}
+
+function displayResults(results) {
+    const serviceReportContainer = document.getElementById('results-container');
+    const certificateContainer = document.getElementById('certificate-container');
+    
+    // Crear un contenedor específico para el reporte de medidas
+    const medidasReportContainer = document.getElementById('medidas-report-container') || document.createElement('div');
+    if (!medidasReportContainer.id) {
+        medidasReportContainer.id = 'medidas-report-container';
+        medidasReportContainer.style.display = 'none'; // Oculto, solo para la exportación
+        document.body.appendChild(medidasReportContainer);
+    };
+
+    // Construir el contenido del reporte de Servicio
+    const html = buildServicioReport(results);
     serviceReportContainer.innerHTML = html;
-    serviceReportContainer.classList.remove('hidden');
 
     // Construir el contenido del reporte de Medidas
     const medidasHeaderHtml = buildMedidasHeader(results);
@@ -1022,13 +994,6 @@ function displayResults(results) {
     `;
 
     certificateContainer.innerHTML = certificateHtml;
-    certificateContainer.classList.remove('hidden');
-
-    // Renderizar gráfico
-    const errorChartCtx = document.getElementById('errorChart').getContext('2d');
-    if(myChart) {
-        myChart.destroy();
-    }
 
     // Calcular el rango de los datos para añadir un "padding" a los ejes
     const xValues = results.aforos.map(a => a.promedio_volumen_ul);
@@ -1061,6 +1026,13 @@ function displayResults(results) {
         ]
     };
 
+    // Mostrar los contenedores ANTES de renderizar los gráficos
+    serviceReportContainer.classList.remove('hidden');
+    certificateContainer.classList.remove('hidden');
+
+    // Renderizar gráfico de Errores (Reporte de Servicio)
+    const errorChartCtx = document.getElementById('errorChart').getContext('2d');
+    if(myChart) { myChart.destroy(); }
     myChart = new Chart(errorChartCtx, {
         type: 'scatter',
         data: scatterData,
@@ -1106,12 +1078,6 @@ function displayResults(results) {
     });
 
     // --- Renderizar el nuevo gráfico de Incertidumbre ---
-    // Destruir instancia anterior si existe para evitar solapamiento
-    if (window.errorIncertidumbreChart instanceof Chart) {
-        window.errorIncertidumbreChart.destroy();
-    }
-
-    const errorIncertidumbreCtx = document.getElementById('errorIncertidumbreChart').getContext('2d');
 
     const errorIncertidumbreData = {
         datasets: [
@@ -1144,6 +1110,9 @@ function displayResults(results) {
         ]
     };
 
+    // Renderizar gráfico de Incertidumbre (Certificado)
+    if (window.errorIncertidumbreChart instanceof Chart) { window.errorIncertidumbreChart.destroy(); }
+    const errorIncertidumbreCtx = document.getElementById('errorIncertidumbreChart').getContext('2d');
     window.errorIncertidumbreChart = new Chart(errorIncertidumbreCtx, {
         type: 'bar', // El tipo base es 'bar' para las barras de error
         data: errorIncertidumbreData,
