@@ -173,8 +173,20 @@ async function loadSiteConfig() {
     try {
         const response = await fetch('/static/config/site_config.json');
         const config = await response.json();
-        document.getElementById('firma_nombre').value = config.firma_gerente?.nombre || 'No configurado';
-        document.getElementById('firma_cargo').value = config.firma_gerente?.cargo || 'No configurado';
+        const selectorRealizo = document.getElementById('realizo_calibracion_selector');
+        const selectorAutorizo = document.getElementById('autorizo_calibracion_selector');
+        selectorRealizo.innerHTML = ''; // Limpiar opciones existentes
+        selectorAutorizo.innerHTML = '';
+        if (config.firmantes) {
+            for (const key in config.firmantes) {
+                const firmante = config.firmantes[key];
+                const option = new Option(`${firmante.nombre} - ${firmante.cargo}`, key);
+                selectorRealizo.add(option.cloneNode(true));
+                selectorAutorizo.add(option.cloneNode(true));
+            }
+            selectorRealizo.value = 'AA'; // Valor por defecto para "Realizó"
+            selectorAutorizo.value = 'A'; // Valor por defecto para "Autorizó"
+        }
     } catch (error) {
         console.error('Error al cargar la configuración del sitio:', error);
     }
@@ -335,6 +347,8 @@ function collectFormData() {
             patron_seleccionado: document.getElementById('patron_seleccionado').value,
             auxiliar_ta: document.getElementById('auxiliar_ta').value,
             auxiliar_ca: document.getElementById('auxiliar_ca').value,
+            realizo_calibracion: document.getElementById('realizo_calibracion_selector').value, // Firma 1
+            autorizo_calibracion: document.getElementById('autorizo_calibracion_selector').value, // Firma 2
             debug_mode: true, // <-- AÑADIDO: Activa el modo de diagnóstico en el backend
             mantenimientos: Array.from(document.querySelectorAll('input[name="mantenimiento"]:checked')).map(el => el.value),
             condiciones_iniciales: {
@@ -342,10 +356,6 @@ function collectFormData() {
                 promedio2: parseFloat(document.getElementById('inicial-promedio-2').value),
                 promedio3: parseFloat(document.getElementById('inicial-promedio-3').value),
             },
-            firma_gerente: {
-                nombre: document.getElementById('firma_nombre').value,
-                cargo: document.getElementById('firma_cargo').value,
-            }
         }
     };
 
@@ -731,7 +741,7 @@ function buildMedidasHeader(results) {
                                 ${eg.ajuste_realizado || 'N'}
                             </span>
                             <span style="border: 1px solid black; padding: 1px 4px; margin-left: 10px; background-color: #f3f4f6;">
-                                AA
+                                ${eg.realizo_calibracion || ''}
                             </span>
                         </div>
                     </td>
@@ -1019,7 +1029,7 @@ function buildServicioReport_PDF(results, chartImage = '') {
 
         <!-- Firmas -->
         <section style="margin-top: 2.5cm; page-break-inside: avoid; font-size: 11px;">
-            ${(() => { const firma = results.textos_reporte.firma_gerente || {}; return `
+            ${(() => { const firma = results.textos_reporte.entradas_generales.firma_calibra || {}; return `
             <table style="width: 100%; border-collapse: collapse; border: none;">
                 <tr>
                     <td style="width: 50%; text-align: center; padding: 0 1cm; border: none;">
@@ -1200,7 +1210,7 @@ function buildCertificadoReport_PDF(results, chartImage = '') {
         </section>
 
         <!-- Datos del Cliente -->
-        <section style="margin-top: 0.5cm;">
+        <section style="margin-top: 0.3cm;">
             <table style="width: 100%; border-collapse: collapse; font-size: 11px;">
                 <tr class="medidas-header">
                     <th style="border: none; padding: 4px; color: white; text-align: center;" colspan="4">
@@ -1224,7 +1234,7 @@ function buildCertificadoReport_PDF(results, chartImage = '') {
         </section>
 
         <!-- Datos del Ítem (IBC) -->
-        <section style="margin-top: 0.5cm;">
+        <section style="margin-top: 0.3cm;">
             <table style="width: 100%; border-collapse: collapse; font-size: 11px;">
                 <tr class="medidas-header">
                     <th style="border: none; padding: 4px; color: white; text-align: center;" colspan="6">
@@ -1260,7 +1270,7 @@ function buildCertificadoReport_PDF(results, chartImage = '') {
         </section>
 
         <!-- Condiciones Ambientales -->
-        <section style="margin-top: 0.5cm;">
+        <section style="margin-top: 0.3cm;">
             <table style="width: 100%; border-collapse: collapse; font-size: 11px;">
                 <tr class="medidas-header">
                     <th style="border: none; padding: 4px; color: white; text-align: center;" colspan="4">
@@ -1283,7 +1293,7 @@ function buildCertificadoReport_PDF(results, chartImage = '') {
         </section>
 
         <!-- Trazabilidad Metrológica -->
-        <section style="margin-top: 0.5cm;">
+        <section style="margin-top: 0.3cm;">
             <table style="width: 100%; border-collapse: collapse; font-size: 11px;">
                 <tr class="medidas-header">
                     <th style="border: none; padding: 4px; color: white; text-align: center;">
@@ -1291,19 +1301,66 @@ function buildCertificadoReport_PDF(results, chartImage = '') {
                     </th>
                 </tr>
                 <tr>
-                    <td style="padding: 8px; border: none;">
-                        <p><strong>Patrones de Referencia:</strong> <em style="font-style: italic; color: #555;">Standards Used</em><br>${results.textos_reporte.especificacion_principal}</p>
-                        <p style="margin-top: 8px;"><strong>Equipo auxiliar:</strong> <em style="font-style: italic; color: #555;">Auxiliary equipment</em><br>${results.textos_reporte.especificacion_ta}<br>${results.textos_reporte.especificacion_ca}</p>
-                        <p style="margin-top: 8px;"><strong>Trazabilidad metrológica:</strong> <em style="font-style: italic; color: #555;">Metrological Traceability</em><br>${results.textos_reporte.trazabilidad_nacional}</p>
-                        <p style="margin-top: 8px;"><strong>Procedimiento utilizado:</strong> <em style="font-style: italic; color: #555;">Procedure used</em><br>${results.textos_reporte.procedimiento_utilizado}</p>
-                        <p style="margin-top: 8px;"><strong>Lugar de Calibración:</strong> <em style="font-style: italic; color: #555;">Calibration Location</em><br>${results.textos_reporte.lugar_servicio}</p>
+                    <td style="padding: 4px; border: none;">
+                        <table style="width: 100%; border-collapse: collapse; font-size: 11px;">
+                            <tr style="vertical-align: top;">
+                                <td style="width: 25%; padding: 4px; font-weight: bold; border: none; text-align: left;">Patrones de Referencia:<br><span style="font-style: italic; color: #555; font-weight: normal;">Standards Used</span></td>
+                                <td style="width: 75%; padding: 4px; border: none; text-align: left;">${results.textos_reporte.especificacion_principal}</td>
+                            </tr>
+                            <tr style="vertical-align: top;">
+                                <td style="width: 25%; padding: 4px; font-weight: bold; border: none; text-align: left;">Equipo auxiliar:<br><span style="font-style: italic; color: #555; font-weight: normal;">Auxiliary equipment</span></td>
+                                <td style="width: 75%; padding: 4px; border: none; text-align: left;">
+                                    ${results.textos_reporte.especificacion_ca}<br><br>
+                                    ${results.textos_reporte.especificacion_ta}
+                                </td>
+                            </tr>
+                            <tr style="vertical-align: top;">
+                                <td style="width: 25%; padding: 4px; font-weight: bold; border: none; text-align: left;">Trazabilidad metrológica:<br><span style="font-style: italic; color: #555; font-weight: normal;">Metrological Traceability</span></td>
+                                <td style="width: 75%; padding: 4px; border: none; text-align: left;">${results.textos_reporte.trazabilidad_nacional}</td>
+                            </tr>
+                            <tr style="vertical-align: top;">
+                                <td style="width: 25%; padding: 4px; font-weight: bold; border: none; text-align: left;">Procedimiento utilizado:<br><span style="font-style: italic; color: #555; font-weight: normal;">Procedure used</span></td>
+                                <td style="width: 75%; padding: 4px; border: none; text-align: left;">${results.textos_reporte.procedimiento_utilizado}</td>
+                            </tr>
+                            <tr style="vertical-align: top;">
+                                <td style="width: 25%; padding: 4px; font-weight: bold; border: none; text-align: left;">Lugar de Calibración:<br><span style="font-style: italic; color: #555; font-weight: normal;">Calibration Location</span></td>
+                                <td style="width: 75%; padding: 4px; border: none; text-align: left;">${results.textos_reporte.lugar_servicio}</td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+            </table>
+        </section>
+
+        <!-- Personal (Firmas) -->
+        <section style="margin-top: 0.5cm; page-break-inside: avoid;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 11px;">
+                <tr class="medidas-header">
+                    <th style="border: none; padding: 4px; color: white; text-align: center;" colspan="2">
+                        Personal <br> <em style="font-weight: normal;">Staff</em>
+                    </th>
+                </tr>
+                <tr>
+                    <td style="padding: 4px; font-weight: bold; border: none; text-align: center; width: 50%;">Calibrado por:<br><span style="font-style: italic; color: #555; font-weight: normal;">Calibrated by</span></td>
+                    <td style="padding: 4px; font-weight: bold; border: none; text-align: center; width: 50%;">Autorizado por:<br><span style="font-style: italic; color: #555; font-weight: normal;">Authorized by</span></td>
+                </tr>
+                <tr>
+                    <td style="padding-top: 0.5cm; text-align: center; border: none;">
+                        <div style="border-top: 1px solid #333; margin: 0 auto 5px auto; width: 70%;"></div>
+                        <div>${results.textos_reporte.entradas_generales.firma_calibra?.nombre || ''}</div>
+                        <div style="font-weight: bold;">${results.textos_reporte.entradas_generales.firma_calibra?.cargo || ''}</div>
+                    </td>
+                    <td style="padding-top: 0.5cm; text-align: center; border: none;">
+                        <div style="border-top: 1px solid #333; margin: 0 auto 5px auto; width: 70%;"></div>
+                        <div>${results.textos_reporte.entradas_generales.firma_autoriza?.nombre || ''}</div>
+                        <div style="font-weight: bold;">${results.textos_reporte.entradas_generales.firma_autoriza?.cargo || ''}</div>
                     </td>
                 </tr>
             </table>
         </section>
 
         <!-- Resultados de la Calibración -->
-        <section style="margin-top: 0.5cm;">
+        <section style="margin-top: 0.3cm;">
             <table style="width: 100%; border-collapse: collapse; font-size: 11px;">
                 <tr class="medidas-header">
                     <th style="border: none; padding: 4px; color: white; text-align: center;">
@@ -1317,7 +1374,7 @@ function buildCertificadoReport_PDF(results, chartImage = '') {
         </section>
 
         <!-- Tabla de Resultados del Certificado -->
-        <section style="margin-top: 0.5cm;">
+        <section style="margin-top: 0.3cm;">
             <table style="width: 100%; border-collapse: collapse; font-size: 10px; text-align: center;">
                 <thead class="medidas-header">
                     <tr>
@@ -1348,7 +1405,7 @@ function buildCertificadoReport_PDF(results, chartImage = '') {
         </section>
 
         <!-- Gráfico de Incertidumbre -->
-        <section style="margin-top: 0.5cm; text-align: center; page-break-inside: avoid;">
+        <section style="margin-top: 0.3cm; text-align: center; page-break-inside: avoid;">
             <h3 style="font-size: 12px; font-weight: bold; margin-bottom: 0.3cm; text-align: center;">Error de medida ±Incertidumbre de medida Vs. Valor de referencia</h3>
             ${chartImage ? `
                 <img src="${chartImage}" style="max-width: 80%; height: auto; margin: 0 auto; display: block;">
@@ -1360,7 +1417,7 @@ function buildCertificadoReport_PDF(results, chartImage = '') {
         </section>
 
         <!-- Notas y Observaciones -->
-        <section style="margin-top: 0.5cm;">
+        <section style="margin-top: 0.3cm;">
             <table style="width: 100%; border-collapse: collapse; font-size: 11px;">
                 <tr class="medidas-header">
                     <th style="border: none; padding: 4px; color: white; text-align: center;">
@@ -1384,19 +1441,6 @@ function buildCertificadoReport_PDF(results, chartImage = '') {
             <p>FIN DEL DOCUMENTO</p>
         </div>
 
-        <section style="margin-top: 2.5cm; page-break-inside: avoid; font-size: 11px;">
-            ${(() => { const firma = results.textos_reporte.firma_gerente || {}; return `
-            <table style="width: 100%; border-collapse: collapse; border: none;">
-                <tr>
-                    <td style="width: 50%; text-align: center; padding: 0 1cm; border: none;">
-                        <div style="border-top: 1px solid #333; margin-bottom: 5px;"></div>
-                        <div>${firma.nombre || ''}</div>
-                        <div style="font-weight: bold;">${firma.cargo || ''}</div>
-                    </td>
-                </tr>
-            </table>
-            `})()}
-        </section>
     `;
 
     return html;

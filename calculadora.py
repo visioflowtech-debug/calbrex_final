@@ -97,6 +97,27 @@ def generar_textos_reporte(entradas_generales, resultados_aforos, especificacion
     # Construir el párrafo descriptivo inicial
     eg = entradas_generales
 
+    # --- Lógica de Firma Dinámica ---
+    firmantes_config = site_config.get('firmantes', {})
+    
+    # Obtener los datos de la persona que calibra (Firma 1)
+    codigo_calibra = eg.get('realizo_calibracion', 'AA') # 'AA' por defecto
+    firma_calibra = firmantes_config.get(codigo_calibra, {
+        "nombre": "No configurado",
+        "cargo": "No configurado"
+    })
+    
+    # Obtener los datos de la persona que autoriza (Firma 2)
+    codigo_autoriza = eg.get('autorizo_calibracion', 'A') # 'A' por defecto
+    firma_autoriza = firmantes_config.get(codigo_autoriza, {
+        "nombre": "No configurado",
+        "cargo": "No configurado"
+    })
+
+    # Añadir las firmas resueltas a las entradas generales para que estén disponibles en todos los reportes
+    eg['firma_calibra'] = firma_calibra
+    eg['firma_autoriza'] = firma_autoriza
+
     # Añadir fecha de emisión (calibración + 2 días)
     if eg.get('fecha_calibracion'):
         from datetime import datetime, timedelta
@@ -185,7 +206,6 @@ def generar_textos_reporte(entradas_generales, resultados_aforos, especificacion
         "procedimiento_utilizado": procedimiento_utilizado,
         "mantenimientos": mantenimientos_realizados,
         "entradas_generales": eg,
-        "firma_gerente": site_config.get('firma_gerente', {}),
         "notas_certificado": site_config.get('notas_observaciones_certificado', []),
         "unidades": eg.get('unidades', 'µL')
     }
