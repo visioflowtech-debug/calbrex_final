@@ -287,7 +287,6 @@ function collectFormData() {
             tipo_volumen: document.getElementById('tipo_volumen').value,
             tipo_calibracion: document.getElementById('tipo_calibracion').value,
             ajuste_realizado: document.getElementById('ajuste_realizado').value,
-            observaciones: document.getElementById('observaciones').value,
             div_min_valor: parseFloat(document.getElementById('div_min_valor').value) || 0, // <-- AÑADIDO
             div_min_unidad: document.getElementById('div_min_unidad').value,
             tolerancia: document.getElementById('tolerancia').value,
@@ -311,20 +310,16 @@ function collectFormData() {
 
     for (let a = 1; a <= 3; a++) {
         const medicionesMasa = [];
-        const medicionesVacio = [];
-        const medicionesLleno = [];
         const medicionesAmbientales = [];
         for (let i = 1; i <= 10; i++) {
             // Ahora usamos la columna 'm' calculada
-            medicionesMasa.push(parseFloat(document.getElementById(`aforo${a}-m-${i}`).value) || 0);
+            medicionesMasa.push(parseFloat(document.getElementById(`aforo${a}-m-${i}`).value));
             medicionesAmbientales.push({
                 temp_agua: parseFloat(document.getElementById(`aforo${a}-temp_agua-${i}`).value),
                 temp_amb: parseFloat(document.getElementById(`aforo${a}-temp_amb-${i}`).value),
                 presion: parseFloat(document.getElementById(`aforo${a}-presion-${i}`).value),
                 humedad: parseFloat(document.getElementById(`aforo${a}-humedad-${i}`).value),
             });
-            medicionesVacio.push(parseFloat(document.getElementById(`aforo${a}-vacio-${i}`).value) || 0);
-            medicionesLleno.push(parseFloat(document.getElementById(`aforo${a}-lleno-${i}`).value) || 0);
         }
         let valor_nominal_aforo;
         if (a === 1) valor_nominal_aforo = volNominal / 10;
@@ -335,8 +330,6 @@ function collectFormData() {
             valor_nominal: valor_nominal_aforo,
             mediciones_masa: medicionesMasa,
             mediciones_ambientales: medicionesAmbientales,
-            mediciones_vacio: medicionesVacio,
-            mediciones_lleno: medicionesLleno,
         };
     }
     return data;
@@ -512,56 +505,45 @@ async function handleExportPdf(reportType) {
 }
 
 function buildMedidasHeader(results) {
-    if (!results || !results.textos_reporte || !results.aforos) {
-        console.error('Datos incompletos para generar el reporte');
-        return '';
-    }
-
-    const eg = results.textos_reporte.entradas_generales || {};
-    const aforos = results.aforos || [];
+    const eg = results.textos_reporte.entradas_generales;
+    const aforos = results.aforos;
     const unidades = results.textos_reporte.unidades || 'µL';
-
-    // Recuperar los datos brutos del formulario para el reporte de medidas
-    const formData = collectFormData();
-    const aforosBrutos = [formData.aforo1, formData.aforo2, formData.aforo3];
-
-
-    // Función auxiliar para formatear números
-    const formatNumber = (num, decimals) => {
-        if (num === null || num === undefined) return '0,' + '0'.repeat(decimals);
-        return num.toFixed(decimals).replace('.', ',');
-    };
 
     // Formatear fechas
     const formatDate = (dateString) => {
         if (!dateString) return 'N/A';
-        const date = new Date(dateString + 'T00:00:00');
+        const date = new Date(dateString + 'T00:00:00'); // Asegurar que se interprete como fecha local
         return date.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
     };
 
     const headerHtml = `
-    <div style="margin-top: 0;">
-        <table style="width: 100%; border-collapse: collapse; border-spacing: 0;">
+    <div>
+        <table class="w-full border-collapse text-xs" style="border: 1px solid black;">
             <tbody style="font-size: 7px;">
                 <tr>
-                    <td style="width: 80%; vertical-align: top; border: 1px solid black; padding: 0;">
-                        <table style="width: 100%; font-size: 7px; line-height: 1.2; border: none;">
-                            <tr><td style="padding: 1px 4px; font-weight: bold; border: none;">CLIENTE</td><td style="padding: 1px 4px; border: none;" colspan="5">${eg.nombre_cliente || ''}</td><td style="padding: 1px 4px; font-weight: bold; border: none;">FECHA REC.</td><td style="padding: 1px 4px; border: none;">${formatDate(eg.fecha_recepcion)}</td></tr>
-                            <tr><td style="padding: 1px 4px; font-weight: bold; border: none;">INSTRUMENTO</td><td style="padding: 1px 4px; border: none;" colspan="3">${eg.descripcion_instrumento || ''}</td><td style="padding: 1px 4px; font-weight: bold; border: none;">TIPO</td><td style="padding: 1px 4px; border: none;">${eg.tipo_instrumento || ''}</td><td style="padding: 1px 4px; font-weight: bold; border: none;">FECHA CAL.</td><td style="padding: 1px 4px; border: none;">${formatDate(eg.fecha_calibracion)}</td></tr>
-                            <tr><td style="padding: 1px 4px; font-weight: bold; border: none;">MARCA</td><td style="padding: 1px 4px; border: none;">${eg.marca_instrumento || ''}</td><td style="padding: 1px 4px; font-weight: bold; border: none;">VOL. NOMI.</td><td style="padding: 1px 4px; border: none;">${eg.vol_nominal || ''}</td><td style="padding: 1px 4px; font-weight: bold; border: none;">VOLUMEN</td><td style="padding: 1px 4px; border: none;">${eg.tipo_volumen || ''}</td><td style="padding: 1px 4px; font-weight: bold; border: none;">Ɵ CUELLO:</td><td style="padding: 1px 4px; border: none;">${eg.cuello_instrumento || 'N.A.'}</td></tr>
-                            <tr><td style="padding: 1px 4px; font-weight: bold; border: none;">MODELO</td><td style="padding: 1px 4px; border: none;">${eg.modelo_instrumento || ''}</td><td style="padding: 1px 4px; font-weight: bold; border: none;">UNIDAD</td><td style="padding: 1px 4px; border: none;">${eg.unidades || ''}</td><td style="padding: 1px 4px; font-weight: bold; border: none;">T. DESCARGA</td><td style="padding: 1px 4px; border: none;">${eg.t_descarga || 'N.A.'}</td><td style="padding: 1px 4px; font-weight: bold; border: none;">PUNTAS</td><td style="padding: 1px 4px; border: none;">${eg.puntas_valor || ''} ${eg.puntas_unidad || ''}</td></tr>
-                            <tr><td style="padding: 1px 4px; font-weight: bold; border: none;">SERIE</td><td style="padding: 1px 4px; border: none;">${eg.serie_instrumento || ''}</td><td style="padding: 1px 4px; font-weight: bold; border: none;">CLASE</td><td style="padding: 1px 4px; border: none;">${eg.clase_instrumento || 'N.A.'}</td><td style="padding: 1px 4px; font-weight: bold; border: none;">DIV. MÍN.</td><td style="padding: 1px 4px; border: none;">${eg.div_min_valor || ''} ${eg.div_min_unidad || ''}</td><td style="padding: 1px 4px; font-weight: bold; border: none;">TOLERANCIA</td><td style="padding: 1px 4px; border: none;">${eg.tolerancia || 'N.A.'}</td></tr>
-                            <tr><td style="padding: 1px 4px; font-weight: bold; border: none;">ID</td><td style="padding: 1px 4px; border: none;">${eg.id_instrumento || ''}</td><td style="padding: 1px 4px; font-weight: bold; border: none;">CALIBRADO PARA</td><td style="padding: 1px 4px; border: none;">${eg.tipo_calibracion || ''}</td><td style="padding: 1px 4px; font-weight: bold; border: none;">MATERIAL</td><td style="padding: 1px 4px; border: none;">${eg.material || ''}</td><td style="padding: 1px 4px; font-weight: bold; border: none;">RESOLUCIÓN</td><td style="padding: 1px 4px; border: none;">${eg.div_min_valor || ''}</td></tr>
+                    <!-- Columna Izquierda con datos del instrumento -->
+                    <td class="p-1 align-top" style="width: 75%; border-right: 1px solid #999;">
+                        <table class="w-full" style="border: none;">
+                            <!-- Fila 1: Cliente y Fecha Rec. -->
+                            <tr style="border: none;"><td class="font-bold p-1">CLIENTE</td><td class="p-1" colspan="5">${eg.nombre_cliente || ''}</td><td class="font-bold p-1">FECHA REC.</td><td class="p-1" colspan="1">${formatDate(eg.fecha_recepcion)}</td></tr>
+                            <!-- Fila 2: Instrumento, Tipo y Fecha Cal. -->
+                            <tr style="border: none;"><td class="font-bold p-1">INSTRUMENTO</td><td class="p-1" colspan="3">${eg.descripcion_instrumento || ''}</td><td class="font-bold p-1">TIPO</td><td class="p-1">${eg.tipo_instrumento || ''}</td><td class="font-bold p-1">FECHA CAL.</td><td class="p-1">${formatDate(eg.fecha_calibracion)}</td></tr>
+                            <!-- ... (y así sucesivamente para las demás filas) ... -->
+                            <tr style="border: none;"><td class="font-bold p-1">MARCA</td><td class="p-1">${eg.marca_instrumento || ''}</td><td class="font-bold p-1">VOL. NOMI.</td><td class="p-1">${eg.vol_nominal || ''}</td><td class="font-bold p-1">VOLUMEN</td><td class="p-1">${eg.tipo_volumen || ''}</td><td class="font-bold p-1">Ɵ CUELLO:</td><td class="p-1">${eg.cuello_instrumento || 'N.A.'}</td></tr>
+                            <tr style="border: none;"><td class="font-bold p-1">MODELO</td><td class="p-1">${eg.modelo_instrumento || ''}</td><td class="font-bold p-1">UNIDAD</td><td class="p-1">${eg.unidades || ''}</td><td class="font-bold p-1">T. DESCARGA</td><td class="p-1">${eg.t_descarga || 'N.A.'}</td><td class="font-bold p-1">PUNTAS</td><td class="p-1">${eg.puntas_valor || ''} ${eg.puntas_unidad || ''}</td></tr>
+                            <tr style="border: none;"><td class="font-bold p-1">SERIE</td><td class="p-1">${eg.serie_instrumento || ''}</td><td class="font-bold p-1">CLASE</td><td class="p-1">${eg.clase_instrumento || 'N.A.'}</td><td class="font-bold p-1">DIV. MÍN.</td><td class="p-1">${eg.div_min_valor || ''} ${eg.div_min_unidad || ''}</td><td class="font-bold p-1">TOLERANCIA</td><td class="p-1">${eg.tolerancia || 'N.A.'}</td></tr>
+                            <tr style="border: none;"><td class="font-bold p-1">ID</td><td class="p-1">${eg.id_instrumento || ''}</td><td class="font-bold p-1">CALIBRADO PARA</td><td class="p-1">${eg.tipo_calibracion || ''}</td><td class="font-bold p-1">MATERIAL</td><td class="p-1">${eg.material || ''}</td><td class="font-bold p-1">RESOLUCIÓN</td><td class="p-1">${eg.div_min_valor || ''}</td></tr>
                         </table>
                     </td>
-                    <td style="width: 20%; vertical-align: top; border: 1px solid black; padding: 0;">
-                        <table style="width: 100%; font-size: 7px; line-height: 1.2; border: none;">
-                            <tr><td style="padding: 1px 4px; font-weight: bold; border: none;">SERVICIO</td><td style="padding: 1px 4px; border: none;">${eg.numero_servicio || ''}</td></tr>
-                            <tr><td style="padding: 1px 4px; font-weight: bold; border: none;">CERTIFICADO</td><td style="padding: 1px 4px; border: none;">${eg.numero_certificado || ''}</td></tr>
-                            <tr><td style="padding: 1px 4px; font-weight: bold; border: none;">PATRÓN</td><td style="padding: 1px 4px; border: none;">${eg.patron_seleccionado || ''}</td></tr>
-                            <tr><td style="padding: 1px 4px; font-weight: bold; border: none;">AUXILIAR TA</td><td style="padding: 1px 4px; border: none;">${eg.auxiliar_ta || ''}</td></tr>
-                            <tr><td style="padding: 1px 4px; font-weight: bold; border: none;">AUXILIAR CA</td><td style="padding: 1px 4px; border: none;">${eg.auxiliar_ca || ''}</td></tr>
-                            <tr><td style="padding: 1px 4px; font-weight: bold; border: none;">LIMPIEZA</td><td style="padding: 1px 4px; border: none;">${eg.limpieza || ''}</td></tr>
+                    <!-- Columna Derecha con datos del servicio -->
+                    <td class="p-1 align-top" style="width: 25%;">
+                        <table class="w-full" style="border: none;">
+                            <tr style="border: none;"><td class="font-bold pr-2" style="border: none;">SERVICIO</td><td style="border: none;">${eg.numero_servicio || ''}</td></tr>
+                            <tr style="border: none;"><td class="font-bold pr-2" style="border: none;">CERTIFICADO</td><td style="border: none;">${eg.numero_certificado || ''}</td></tr>
+                            <tr style="border: none;"><td class="font-bold pr-2" style="border: none;">PATRÓN</td><td style="border: none;">${eg.patron_seleccionado || ''}</td></tr>
+                            <tr style="border: none;"><td class="font-bold pr-2" style="border: none;">AUXILIAR TA</td><td style="border: none;">${eg.auxiliar_ta || ''}</td></tr>
+                            <tr style="border: none;"><td class="font-bold pr-2" style="border: none;">AUXILIAR CA</td><td style="border: none;">${eg.auxiliar_ca || ''}</td></tr>
+                            <tr style="border: none;"><td class="font-bold pr-2" style="border: none;">LIMPIEZA</td><td style="border: none;">${eg.limpieza || ''}</td></tr>
                         </table>
                     </td>
                 </tr>
@@ -570,16 +552,31 @@ function buildMedidasHeader(results) {
     </div>
     `;
 
-    // Función para generar una tabla de aforo
-    const generateAforoTable = (aforoIndex) => {
-        const aforo = aforoIndex < aforos.length ? aforos[aforoIndex] : null;
-        const showData = aforoIndex < aforos.length;
+    // Función auxiliar para construir una tabla de aforo individual
+    const _buildAforoTable = (title, mediciones) => {
+        let rows = '';
+        const aforoIndex = aforos.findIndex(a => `${a.valor_nominal.toFixed(2)} ${unidades}` === title) + 1;
 
-        const cellStyle = "border: 1px solid black; padding: 2px 3px; text-align: right;"; // Padding ligeramente aumentado
-        const headerCellStyle = "border: 1px solid black; padding: 2px; text-align: center; color: white;";
+        for (let i = 0; i < 10; i++) {
+            const med = aforoIndex > 0 && testData.aforos[aforoIndex - 1] ? testData.aforos[aforoIndex - 1].mediciones[i] : {};
+            const masa = mediciones ? (med.lleno - med.vacio) || 0 : null;
+            rows += `
+                <tr>
+                    <td style="border: 1px solid #999; padding: 1px 2px; text-align: center;">${i + 1}</td>
+                    <td style="border: 1px solid #999; padding: 1px 2px; text-align: center;">${med.vacio !== undefined ? med.vacio.toFixed(4) : '&nbsp;'}</td>
+                    <td style="border: 1px solid #999; padding: 1px 2px; text-align: center;">${med.lleno !== undefined ? med.lleno.toFixed(6) : '&nbsp;'}</td>
+                    <td style="border: 1px solid #999; padding: 1px 2px; text-align: center;">${masa !== null ? masa.toFixed(4) : '&nbsp;'}</td>
+                    <td style="border: 1px solid #999; padding: 1px 2px; text-align: center;">${med.temp_agua !== undefined ? med.temp_agua.toFixed(2) : '&nbsp;'}</td>
+                    <td style="border: 1px solid #999; padding: 1px 2px; text-align: center;">${med.presion !== undefined ? med.presion.toFixed(1) : '&nbsp;'}</td>
+                    <td style="border: 1px solid #999; padding: 1px 2px; text-align: center;">${med.humedad !== undefined ? med.humedad.toFixed(1) : '&nbsp;'}</td>
+                    <td style="border: 1px solid #999; padding: 1px 2px; text-align: center;">${med.temp_amb !== undefined ? med.temp_amb.toFixed(1) : '&nbsp;'}</td>
+                </tr>
+            `;
+        }
 
-        const diagonalLine = !showData ? `
-            <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; overflow: hidden;">
+        // Añadir la línea diagonal para el Aforo 4
+        const diagonalLine = !mediciones ? `
+            <div style="position: absolute; top: 28px; left: 0; right: 0; bottom: 0; overflow: hidden;">
                 <svg width="100%" height="100%" style="position: absolute; top: 0; left: 0;">
                     <line x1="0" y1="0" x2="100%" y2="100%" stroke="black" stroke-width="1"/>
                 </svg>
@@ -587,130 +584,63 @@ function buildMedidasHeader(results) {
         ` : '';
 
         return `
-            <div style="width: 48%;">
-                <table style="width: 100%; border-collapse: collapse; font-size: 7px; line-height: 1.2; margin-bottom: 0;">
-                    <!-- Fila de encabezado con fondo rojo -->
-                    <tr class="medidas-header">
-                        <td style="border: 1px solid black; padding: 2px 4px; color: white;"><strong>AFORO:</strong> ${showData ? aforoIndex + 1 : ''}</td>
-                        <td style="border: 1px solid black; padding: 2px 4px; color: white;"><strong>VOL. NOM:</strong> ${showData ? formatNumber(aforo.valor_nominal, 2) : ''}</td>
-                        <td style="border: 1px solid black; padding: 2px 4px; color: white;"><strong>PUNTA:</strong> ${showData ? '1' : ''}</td>
-                        <td style="border: 1px solid black; padding: 2px 4px; color: white;"><strong>PASOS:</strong></td>
+            <table style="width: 100%; border-collapse: collapse; font-size: 6px;" border="1">
+                <thead style="background-color: #d70000; color: white;">
+                    <tr>
+                        <th style="border: 1px solid #999; padding: 2px; font-size: 6px; color: white;" colspan="8">${title}</th>
                     </tr>
-                </table>
-                <div style="position: relative;">
-                    <table style="width: 100%; border-collapse: collapse; font-size: 7px; line-height: 1.2;">
-                        <tr class="medidas-header">
-                            <th style="${headerCellStyle}">No.</th>
-                            <th style="${headerCellStyle}">VACÍO<br>(g)</th>
-                            <th style="${headerCellStyle}">LLENO<br>(g)</th>
-                            <th style="${headerCellStyle}">MASA<br>(g)</th>
-                            <th style="${headerCellStyle}">TEMP.<br>AGUA (°C)</th>
-                            <th style="${headerCellStyle}">PRESIÓN<br>(hPa)</th>
-                            <th style="${headerCellStyle}">HUMEDAD<br>(%)</th>
-                            <th style="${headerCellStyle}">TEMP.<br>AMB. (°C)</th>
-                        </tr>
-                        ${[...Array(10)].map((_, i) => {
-                            const medicionBruta = showData ? (aforosBrutos[aforoIndex]?.mediciones_ambientales?.[i] || {}) : {};
-                            const vacio = showData ? (aforosBrutos[aforoIndex]?.mediciones_vacio?.[i] || 0) : null;
-                            const lleno = showData ? (aforosBrutos[aforoIndex]?.mediciones_lleno?.[i] || 0) : null;
-                            const masa = showData ? (lleno - vacio) : null;
-
-                            return `
-                                <tr>
-                                    <td style="${cellStyle} text-align: center;">${i + 1}</td>
-                                    <td style="${cellStyle}">${showData ? formatNumber(vacio, 4) : '&nbsp;'}</td>
-                                    <td style="${cellStyle}">${showData ? formatNumber(lleno, 6) : '&nbsp;'}</td>
-                                    <td style="${cellStyle}">${showData ? formatNumber(masa, 4) : '&nbsp;'}</td>
-                                    <td style="${cellStyle}">${showData ? formatNumber(medicionBruta.temp_agua, 1) : '&nbsp;'}</td>
-                                    <td style="${cellStyle}">${showData ? formatNumber(medicionBruta.presion, 1) : '&nbsp;'}</td>
-                                    <td style="${cellStyle}">${showData ? formatNumber(medicionBruta.humedad, 1) : '&nbsp;'}</td>
-                                    <td style="${cellStyle}">${showData ? formatNumber(medicionBruta.temp_amb, 1) : '&nbsp;'}</td>
-                                </tr>
-                            `;
-                        }).join('')}
-                    </table>
-                    ${diagonalLine}
-                </div>
-            </div>
+                    <tr>
+                        <th style="border: 1px solid #999; padding: 2px; font-size: 5px; color: white;">No.</th>
+                        <th style="border: 1px solid #999; padding: 2px; font-size: 5px; color: white;">VACÍO (g)</th>
+                        <th style="border: 1px solid #999; padding: 2px; font-size: 5px; color: white;">LLENO (g)</th>
+                        <th style="border: 1px solid #999; padding: 2px; font-size: 5px; color: white;">MASA (g)</th>
+                        <th style="border: 1px solid #999; padding: 2px; font-size: 5px; color: white;">TEMP. AGUA (°C)</th>
+                        <th style="border: 1px solid #999; padding: 2px; font-size: 5px; color: white;">PRESIÓN (hPa)</th>
+                        <th style="border: 1px solid #999; padding: 2px; font-size: 5px; color: white;">HUMEDAD (%)</th>
+                        <th style="border: 1px solid #999; padding: 2px; font-size: 5px; color: white;">TEMP. AMB. (°C)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${rows}
+                </tbody>
+            </table>
+            ${diagonalLine}
         `;
     };
 
+    const wrapInRelativeDiv = (content) => {
+        return `<div style="position: relative;">${content}</div>`;
+    };
 
-    // Construir las tablas de aforos en formato 2x2
-    const aforosHtml = `
-        <div style="margin-top: 0;">
-            <div style="display: flex; justify-content: space-between; margin-bottom: 0.2cm;">
-                ${generateAforoTable(0, results)}
-                ${generateAforoTable(1, results)}
-            </div>
-            <div style="display: flex; justify-content: space-between;">
-                ${generateAforoTable(2, results)}
-                ${generateAforoTable(3, results)}
-            </div>
-        </div>
-    `;
+    const aforo1Table = _buildAforoTable(`${aforos[0].valor_nominal.toFixed(2)} ${unidades}`, aforos[0].mediciones_volumen_ul);
+    const aforo2Table = _buildAforoTable(`${aforos[1].valor_nominal.toFixed(2)} ${unidades}`, aforos[1].mediciones_volumen_ul);
+    const aforo3Table = _buildAforoTable(`${aforos[2].valor_nominal.toFixed(2)} ${unidades}`, aforos[2].mediciones_volumen_ul);
+    const aforo4Table = _buildAforoTable('Aforo 4', null); // Tabla vacía
 
-    // Tarea 1: Añadir la sección final de Observaciones y Firmas
-    const footerHtml = `
-        <div style="margin-top: 0.3cm; font-size: 7px; page-break-inside: avoid;">
-            <table style="width: 100%; border-collapse: collapse; border: none;">
-                <!-- Fila con las 3 columnas principales -->
-                <tr style="vertical-align: top; page-break-inside: avoid;">
-                    <!-- Columna 1: Observaciones -->
-                    <td style="width: 33.33%; padding-right: 0.5cm; border: none;">
-                        <div style="padding: 5px; min-height: 50px;">
-                            <div style="font-weight: bold;">Observaciones</div>
-                            <div style="margin-top: 5px;">${eg.observaciones || ''}</div>
-                        </div>
+    const medicionesGridHtml = `
+        <table style="width: 100%; border-collapse: separate; border-spacing: 0 0.2cm; margin-top: 0.2cm;">
+            <tbody>
+                <tr style="vertical-align: top;">
+                    <td style="width: 50%; padding-right: 0.1cm;">
+                        ${aforo1Table}
                     </td>
-                    <!-- Columna 2: Ajuste -->
-                    <td style="width: 33.33%; padding-left: 0.25cm; padding-right: 0.25cm; border: none;">
-                        <div style="padding: 5px; min-height: 50px;">
-                            <span>¿Se realizó ajuste? S/N</span>
-                            <span style="border: 1px solid black; padding: 1px 4px; margin-left: 10px; background-color: #f3f4f6;">
-                                ${eg.ajuste_realizado || 'N'}
-                            </span>
-                            <span style="border: 1px solid black; padding: 1px 4px; margin-left: 10px; background-color: #f3f4f6;">
-                                AA
-                            </span>
-                        </div>
-                    </td>
-                    <!-- Columna 3: Prueba de Condiciones Iniciales -->
-                    <td style="width: 33.33%; padding-left: 0.5cm; border: none;">
-                        <table style="width: 100%; border-collapse: collapse; font-size: 7px;">
-                            <tr class="medidas-header">
-                                <th style="border: 1px solid black; padding: 2px; color: white; text-align: center;" colspan="3">Prueba de Condiciones Iniciales</th>
-                            </tr>
-                            <tr>
-                                <td style="border: 1px solid black; padding: 2px; text-align: center;">${eg.vol_nominal ? formatNumber(eg.vol_nominal / 10, 2) : ''}</td>
-                                <td style="border: 1px solid black; padding: 2px; text-align: center;">${eg.vol_nominal ? formatNumber(eg.vol_nominal / 2, 2) : ''}</td>
-                                <td style="border: 1px solid black; padding: 2px; text-align: center;">${eg.vol_nominal ? formatNumber(eg.vol_nominal, 2) : ''}</td>
-                            </tr>
-                            <tr>
-                                <td style="border: 1px solid black; padding: 2px; text-align: center;">${formatNumber(eg.condiciones_iniciales?.promedio1, 2)}</td>
-                                <td style="border: 1px solid black; padding: 2px; text-align: center;">${formatNumber(eg.condiciones_iniciales?.promedio2, 2)}</td>
-                                <td style="border: 1px solid black; padding: 2px; text-align: center;">${formatNumber(eg.condiciones_iniciales?.promedio3, 2)}</td>
-                            </tr>
-                        </table>
+                    <td style="width: 50%; padding-left: 0.1cm;">
+                        ${aforo2Table}
                     </td>
                 </tr>
-                <!-- Fila para las firmas -->
-                <tr style="page-break-inside: avoid;">
-                    <td style="padding-top: 0.2cm; text-align: center; border: none;">
-                        <div style="border-top: 1px solid black; margin: 0 auto; width: 60%;"></div>
-                        <div style="font-size: 7px; margin-top: 2px;">REALIZÓ</div>
+                <tr style="vertical-align: top;">
+                    <td style="width: 50%; padding-right: 0.1cm;">
+                        ${aforo3Table}
                     </td>
-                    <td style="border: none;"></td> <!-- Celda vacía para espaciar -->
-                    <td style="padding-top: 0.2cm; text-align: center; border: none;">
-                        <div style="border-top: 1px solid black; margin: 0 auto; width: 60%;"></div>
-                        <div style="font-size: 7px; margin-top: 2px;">SUPERVISÓ</div>
+                    <td style="width: 50%; padding-left: 0.1cm;">
+                        ${wrapInRelativeDiv(aforo4Table)}
                     </td>
                 </tr>
-            </table>
-        </div>
+            </tbody>
+        </table>
     `;
 
-    return headerHtml + aforosHtml + footerHtml;
+    return headerHtml + medicionesGridHtml;
 }
 
 function displayResults(results) {
@@ -719,13 +649,10 @@ function displayResults(results) {
     const unidades = results.textos_reporte.unidades || 'µL';
     
     // Crear un contenedor específico para el reporte de medidas
-    const medidasReportContainer = document.getElementById('medidas-report-container') || document.createElement('div');
-    if (!medidasReportContainer.id) {
-        medidasReportContainer.id = 'medidas-report-container';
-        medidasReportContainer.style.display = 'none'; // Oculto, solo para la exportación
-        document.body.appendChild(medidasReportContainer);
-    };
-
+    const medidasReportContainer = document.createElement('div');
+    medidasReportContainer.id = 'medidas-report-container';
+    medidasReportContainer.style.display = 'none'; // Oculto, solo para la exportación
+    document.body.appendChild(medidasReportContainer);
 
     let html = `
         <section class="bg-white p-6 rounded-lg shadow-md border border-gray-200">

@@ -5,87 +5,64 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <title>Reporte de Calibración</title>
     <style>
-        /* --- Estilos para Encabezado y Pie de Página --- */
-        #page-header, #page-footer {
-            position: running(header_footer);
-            font-size: 9px;
-            color: #4a5568;
-            width: 100%;
-        }
-
-        #page-footer .page-number:after {
-            content: counter(page);
-        }
-
-        #page-footer .page-count:after {
-            content: counter(pages);
-        }
-
         /* Estilos generales para el PDF */
         @page {
             {% if report_type == 'medidas' %}
             size: letter landscape;
-            margin: 2.5cm 1.5cm;
+            margin: 0.7cm 0.5cm;
             {% else %}
             size: letter;
             margin: 2.5cm 1.5cm;
             {% endif %}
 
-            @top-center {
-                content: element(header_footer);
-                width: 100%;
-            }
-            @bottom-right {
-                content: "Página " counter(page) " de " counter(pages);
+            @bottom-center {
+                content: "Barranquilla No. 64, Col. Lindavista, C.P. 07300, Gustavo A. Madero, CDMX.\A Tel.: (55) 5555 2222, Email: servicios@calbrex.com.mx";
                 font-size: 9px;
+                font-family: 'Calibri', sans-serif;
                 color: #4a5568;
+                white-space: pre-wrap; /* Permite el salto de línea con \A */
+                text-align: center;
             }
         }
         
         body {
-            font-family: 'Helvetica', 'Arial', sans-serif;
+            font-family: 'Calibri', sans-serif;
             padding: 0;
             margin: 0;
-            font-size: 10px;
+            font-size: 9px;
             color: #333;
         }
 
         /* Contenedor principal con márgenes */
         .main-content {
-            {% if report_type == 'medidas' %}
             padding: 0;
-            {% else %}
-            padding: 0;
-            {% endif %}
         }
 
         h1, h2, h3 {
-            font-family: 'Helvetica Neue', 'Arial', sans-serif;
+            font-family: 'Calibri', sans-serif;
             color: #1a202c;
             margin-top: 1.5em;
             margin-bottom: 0.5em;
         }
-        h1 { font-size: 20px; text-align: center; border-bottom: 2px solid #4a5568; padding-bottom: 5px; }
-        h2 { font-size: 16px; border-bottom: 1px solid #718096; padding-bottom: 3px; }
-        h3 { font-size: 12px; font-weight: bold; }
+        h1 { font-size: 14px; font-weight: bold; text-align: center; border-bottom: 1px solid #4a5568; padding-bottom: 4px; }
+        h2 { font-size: 11px; font-weight: bold; border-bottom: 1px solid #718096; padding-bottom: 3px; }
+        h3 { font-size: 10px; font-weight: bold; }
 
         table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 1em;
-            margin-bottom: 1em;
+            margin-bottom: 0.2cm;
         }
         th, td {
-            border: 1px solid #cbd5e0;
+            border: 1px solid #999;
             padding: 5px;
             text-align: left;
             vertical-align: top;
         }
         th {
             background-color: #edf2f7;
-            font-weight: bold;
+            font-weight: 600;
             font-size: 9px;
-            text-transform: uppercase;
         }
         .text-center { text-align: center; }
         .font-bold { font-weight: bold; }
@@ -123,7 +100,7 @@
 
         /* Estilos para las notas */
         .notes-section {
-            font-size: 8px;
+            font-size: 9px;
             color: #4a5568;
         }
         .notes-section p {
@@ -164,35 +141,35 @@
         }
         {% endif %}
 
+        /* Estilos para forzar el color de la cabecera de medidas */
+        .medidas-header th, .medidas-header td {
+            background-color: #d70000 !important;
+            color: white !important;
+        }
     </style>
 </head>
 <body>
     <!-- Elemento para el Encabezado (WeasyPrint lo tomará de aquí) -->
-    <div id="page-header">
-        <table style="width: 100%; border-collapse: collapse; border: 1px solid #999;">
-            <tr>
-                <!-- Columna Izquierda: Logo -->
-                <td style="width: 15%; border: 1px solid #999; padding: 5px; text-align: center; vertical-align: middle;">
-                    <img src="{{ base_url }}static/img/logo.png" style="height: 40px; max-width: 100%; display: inline-block;"/>
-                </td>
-                <!-- Columna Central: Título -->
-                <td style="width: 70%; border: 1px solid #999; padding: 5px; text-align: center; vertical-align: middle;">
-                    <div style="font-size: 14px; font-weight: bold;">CALBREX TECHNOLOGIES</div>
-                    <div style="font-size: 10px;">TOMA DE DATOS VOLUMEN</div>
-                </td>
-                <!-- Columna Derecha: Información -->
-                <td style="width: 15%; border: 1px solid #999; padding: 5px; font-size: 8px; line-height: 1.4; text-align: center; vertical-align: middle;">
-                    <div><strong>CAL-FORT-01-01</strong></div>
-                    <div>Versión 00</div>
-                    <div>Fecha de aplicación: 06-05-2025</div>
-                    <div>Pág. 1 de 1</div>
-                </td>
-            </tr>
-        </table>
-    </div>
 
     <!-- Contenedor principal del contenido -->
     <div class="main-content">
+        <div id="page-header">
+            <table style="width: 100%; border-collapse: collapse; border: 1px solid #999; margin-bottom: 0.3cm;">
+                <tr>
+                    <td style="width: 15%; border: 1px solid #999; padding: 5px; text-align: center; vertical-align: middle;"><img src="{{ base_url }}static/img/logo.png" style="height: 40px; max-width: 100%; display: inline-block;"/></td>
+                    <td style="width: 70%; border: 1px solid #999; padding: 5px; text-align: center; vertical-align: middle;">
+                        <div style="font-size: 14px; font-weight: bold;">CALBREX TECHNOLOGIES</div>
+                        <div style="font-size: 10px;">TOMA DE DATOS VOLUMEN</div>
+                    </td>
+                    <td style="width: 15%; border: 1px solid #999; padding: 5px; font-size: 8px; line-height: 1.4; text-align: center; vertical-align: middle;">
+                        <div><strong>CAL-FORT-01-01</strong></div>
+                        <div>Versión 00</div>
+                        <div>Fecha de aplicación: 06-05-2025</div>
+                        <div>Pág. 1 de 1</div>
+                    </td>
+                </tr>
+            </table>
+        </div>
         {{ content_html|safe }}
     </div>
 
