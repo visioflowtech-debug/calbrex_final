@@ -316,6 +316,7 @@ function collectFormData() {
             ajuste_realizado: document.getElementById('ajuste_realizado').value,
             // Datos del reporte de servicio
             direccion_cliente_reporte: document.getElementById('direccion_cliente_reporte').value,
+            correo_cliente_reporte: document.getElementById('correo_cliente_reporte').value,
             telefono_cliente_reporte: document.getElementById('telefono_cliente_reporte').value,
             contacto_reporte_directo: document.getElementById('contacto_reporte_directo').value,
             intervalo_min_reporte: document.getElementById('intervalo_min_reporte').value,
@@ -1180,20 +1181,103 @@ function buildCertificadoReport_PDF(results, chartImage = '') {
                     </th>
                 </tr>
                 <tr>
-                    <td style="padding: 4px; font-weight: bold; border: 1px solid #ccc;">Fecha Recepción:<br><span style="font-style: italic; color: #555; font-weight: normal;">Reception Date</span></td>
-                    <td style="padding: 4px; border: 1px solid #ccc;">${formatDate(eg.fecha_recepcion)}</td>
-                    <td style="padding: 4px; font-weight: bold; border: 1px solid #ccc;">Fecha Calibración:<br><span style="font-style: italic; color: #555; font-weight: normal;">Calibration Date</span></td>
-                    <td style="padding: 4px; border: 1px solid #ccc;">${formatDate(eg.fecha_calibracion)}</td>
-                    <td style="padding: 4px; font-weight: bold; border: 1px solid #ccc;">Certificado:<br><span style="font-style: italic; color: #555; font-weight: normal;">Certificate</span></td>
-                    <td style="padding: 4px; border: 1px solid #ccc;">${eg.numero_certificado || ''}</td>
+                    <td style="padding: 4px; font-weight: bold; border: none; text-align: left;">Fecha Recepción:<br><span style="font-style: italic; color: #555; font-weight: normal;">Reception Date</span></td>
+                    <td style="padding: 4px; border: none; text-align: left;">${formatDate(eg.fecha_recepcion)}</td>
+                    <td style="padding: 4px; font-weight: bold; border: none; text-align: left;">Fecha Calibración:<br><span style="font-style: italic; color: #555; font-weight: normal;">Calibration Date</span></td>
+                    <td style="padding: 4px; border: none; text-align: left;">${formatDate(eg.fecha_calibracion)}</td>
+                    <td style="padding: 4px; font-weight: bold; border: none; text-align: left;">Certificado:<br><span style="font-style: italic; color: #555; font-weight: normal;">Certificate</span></td>
+                    <td style="padding: 4px; border: none; text-align: left;">${eg.numero_certificado || ''}</td>
                 </tr>
                 <tr>
-                    <td style="padding: 4px; font-weight: bold; border: 1px solid #ccc;">Fecha Emisión:<br><span style="font-style: italic; color: #555; font-weight: normal;">Issued Date</span></td>
-                    <td style="padding: 4px; border: 1px solid #ccc;">${formatDate(eg.fecha_emision)}</td>
-                    <td style="padding: 4px; font-weight: bold; border: 1px solid #ccc;">Servicio:<br><span style="font-style: italic; color: #555; font-weight: normal;">Service</span></td>
-                    <td style="padding: 4px; border: 1px solid #ccc;">${eg.numero_servicio || ''}</td>
-                    <td style="padding: 4px; font-weight: bold; border: 1px solid #ccc;">Magnitud evaluada:<br><span style="font-style: italic; color: #555; font-weight: normal;">Evaluated magnitude</span></td>
-                    <td style="padding: 4px; border: 1px solid #ccc;">Volumen</td>
+                    <td style="padding: 4px; font-weight: bold; border: none; text-align: left;">Fecha Emisión:<br><span style="font-style: italic; color: #555; font-weight: normal;">Issued Date</span></td>
+                    <td style="padding: 4px; border: none; text-align: left;">${formatDate(eg.fecha_emision)}</td>
+                    <td style="padding: 4px; font-weight: bold; border: none; text-align: left;">Servicio:<br><span style="font-style: italic; color: #555; font-weight: normal;">Service</span></td>
+                    <td style="padding: 4px; border: none; text-align: left;">${eg.numero_servicio || ''}</td>
+                    <td style="padding: 4px; font-weight: bold; border: none; text-align: left;">Magnitud evaluada:<br><span style="font-style: italic; color: #555; font-weight: normal;">Evaluated magnitude</span></td>
+                    <td style="padding: 4px; border: none; text-align: left;">Volumen</td>
+                </tr>
+            </table>
+        </section>
+
+        <!-- Datos del Cliente -->
+        <section style="margin-top: 0.5cm;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 11px;">
+                <tr class="medidas-header">
+                    <th style="border: none; padding: 4px; color: white; text-align: center;" colspan="4">
+                        Datos del Cliente <br> <em style="font-weight: normal;">Customer information</em>
+                    </th>
+                </tr>
+                <tr>
+                    <td style="padding: 4px; font-weight: bold; border: none; text-align: left; width: 20%;">Nombre del cliente:<br><span style="font-style: italic; color: #555; font-weight: normal;">Customer name</span></td>
+                    <td style="padding: 4px; border: none; text-align: left; width: 30%;">${eg.nombre_cliente || ''}</td>
+                    <td style="padding: 4px; font-weight: bold; border: none; text-align: left; width: 15%;">Contacto:<br><span style="font-style: italic; color: #555; font-weight: normal;">Contact</span></td>
+                    <td style="padding: 4px; border: none; text-align: left; width: 35%;">${eg.contacto_reporte_directo || ''}</td>
+                </tr>
+                <tr>
+                    <td style="padding: 4px; font-weight: bold; border: none; text-align: left;">Dirección:<br><span style="font-style: italic; color: #555; font-weight: normal;">Address</span></td>
+                    <td style="padding: 4px; border: none; text-align: left;">${eg.direccion_cliente_reporte || ''}</td>
+                    <td style="padding: 4px; font-weight: bold; border: none; text-align: left;">Correo:<br><span style="font-style: italic; color: #555; font-weight: normal;">Email</span></td>
+                    <td style="padding: 4px; border: none; text-align: left;">${eg.correo_cliente_reporte || ''}</td>
+                </tr>
+            </table>
+            <p style="font-size: 9px; text-align: left; margin-top: 2px;">Los datos fueron proporcionados por el cliente.</p>
+        </section>
+
+        <!-- Datos del Ítem (IBC) -->
+        <section style="margin-top: 0.5cm;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 11px;">
+                <tr class="medidas-header">
+                    <th style="border: none; padding: 4px; color: white; text-align: center;" colspan="6">
+                        Datos del ítem (IBC) <br> <em style="font-weight: normal;">Ítem data</em>
+                    </th>
+                </tr>
+                <tr>
+                    <td style="padding: 4px; font-weight: bold; border: none; text-align: left;">Descripción:<br><span style="font-style: italic; color: #555; font-weight: normal;">Description</span></td>
+                    <td style="padding: 4px; border: none; text-align: left;">${eg.descripcion_instrumento || ''}</td>
+                    <td style="padding: 4px; font-weight: bold; border: none; text-align: left;">Marca:<br><span style="font-style: italic; color: #555; font-weight: normal;">Manufacturer</span></td>
+                    <td style="padding: 4px; border: none; text-align: left;">${eg.marca_instrumento || ''}</td>
+                    <td style="padding: 4px; font-weight: bold; border: none; text-align: left;">Modelo:<br><span style="font-style: italic; color: #555; font-weight: normal;">Model / Type</span></td>
+                    <td style="padding: 4px; border: none; text-align: left;">${eg.modelo_instrumento || ''}</td>
+                </tr>
+                <tr>
+                    <td style="padding: 4px; font-weight: bold; border: none; text-align: left;">Serie:<br><span style="font-style: italic; color: #555; font-weight: normal;">Serial</span></td>
+                    <td style="padding: 4px; border: none; text-align: left;">${eg.serie_instrumento || ''}</td>
+                    <td style="padding: 4px; font-weight: bold; border: none; text-align: left;">Identificación:<br><span style="font-style: italic; color: #555; font-weight: normal;">Id Number</span></td>
+                    <td style="padding: 4px; border: none; text-align: left;">${eg.id_instrumento || ''}</td>
+                    <td style="padding: 4px; font-weight: bold; border: none; text-align: left;">Tipo:<br><span style="font-style: italic; color: #555; font-weight: normal;">Type</span></td>
+                    <td style="padding: 4px; border: none; text-align: left;">${eg.tipo_instrumento || ''}</td>
+                </tr>
+                <tr>
+                    <td style="padding: 4px; font-weight: bold; border: none; text-align: left;">Intervalo:<br><span style="font-style: italic; color: #555; font-weight: normal;">Nominal Range</span></td>
+                    <td style="padding: 4px; border: none; text-align: left;">${eg.intervalo_min_reporte || ''} a ${eg.intervalo_max_reporte || ''} ${unidades}</td>
+                    <td style="padding: 4px; font-weight: bold; border: none; text-align: left;">Volumen:<br><span style="font-style: italic; color: #555; font-weight: normal;">Indication</span></td>
+                    <td style="padding: 4px; border: none; text-align: left;">${eg.tipo_volumen || ''}</td>
+                    <td style="padding: 4px; font-weight: bold; border: none; text-align: left;">Resolución:<br><span style="font-style: italic; color: #555; font-weight: normal;">Resolution</span></td>
+                    <td style="padding: 4px; border: none; text-align: left;">${(eg.div_min_valor || '0').toString().replace('.', ',')} ${eg.div_min_unidad || ''}</td>
+                </tr>
+            </table>
+            <p style="font-size: 9px; text-align: left; margin-top: 2px;">Los datos fueron proporcionados por el cliente.</p>
+        </section>
+
+        <!-- Condiciones Ambientales -->
+        <section style="margin-top: 0.5cm;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 11px;">
+                <tr class="medidas-header">
+                    <th style="border: none; padding: 4px; color: white; text-align: center;" colspan="4">
+                        Condiciones Ambientales durante la calibración <br> <em style="font-weight: normal;">Enviromental Conditions</em>
+                    </th>
+                </tr>
+                <tr>
+                    <td style="padding: 4px; font-weight: bold; border: none; text-align: left; width: 30%;">Temperatura del líquido de calibración:<br><span style="font-style: italic; color: #555; font-weight: normal;">Calibration Liquid Temperature</span></td>
+                    <td style="padding: 4px; border: none; text-align: left; width: 20%;">${(results.condiciones_finales.temp_liquido || 0).toFixed(1).replace('.', ',')} °C</td>
+                    <td style="padding: 4px; font-weight: bold; border: none; text-align: left; width: 20%;">Temperatura ambiente:<br><span style="font-style: italic; color: #555; font-weight: normal;">Room temperature</span></td>
+                    <td style="padding: 4px; border: none; text-align: left; width: 30%;">${(results.condiciones_finales.temp_ambiente || 0).toFixed(1).replace('.', ',')} °C</td>
+                </tr>
+                <tr>
+                    <td style="padding: 4px; font-weight: bold; border: none; text-align: left;">Presión atmosférica:<br><span style="font-style: italic; color: #555; font-weight: normal;">Atmospheric Pressure</span></td>
+                    <td style="padding: 4px; border: none; text-align: left;">${(results.condiciones_finales.presion || 0).toFixed(1).replace('.', ',')} hPa</td>
+                    <td style="padding: 4px; font-weight: bold; border: none; text-align: left;">Humedad Relativa:<br><span style="font-style: italic; color: #555; font-weight: normal;">Relative Humidity</span></td>
+                    <td style="padding: 4px; border: none; text-align: left;">${(results.condiciones_finales.humedad || 0).toFixed(1).replace('.', ',')} %HR</td>
                 </tr>
             </table>
         </section>
@@ -1207,7 +1291,7 @@ function buildCertificadoReport_PDF(results, chartImage = '') {
                     </th>
                 </tr>
                 <tr>
-                    <td style="padding: 8px; border: 1px solid #ccc; background-color: #f8f9fa;">
+                    <td style="padding: 8px; border: none;">
                         <p><strong>Patrones de Referencia:</strong> <em style="font-style: italic; color: #555;">Standards Used</em><br>${results.textos_reporte.especificacion_principal}</p>
                         <p style="margin-top: 8px;"><strong>Equipo auxiliar:</strong> <em style="font-style: italic; color: #555;">Auxiliary equipment</em><br>${results.textos_reporte.especificacion_ta}<br>${results.textos_reporte.especificacion_ca}</p>
                         <p style="margin-top: 8px;"><strong>Trazabilidad metrológica:</strong> <em style="font-style: italic; color: #555;">Metrological Traceability</em><br>${results.textos_reporte.trazabilidad_nacional}</p>
@@ -1227,7 +1311,7 @@ function buildCertificadoReport_PDF(results, chartImage = '') {
                     </th>
                 </tr>
                 <tr>
-                    <td style="padding: 8px; border: 1px solid #ccc; background-color: #f8f9fa;">${eg.introduccion_certificado}</td>
+                    <td style="padding: 8px; border: none;">${eg.introduccion_certificado}</td>
                 </tr>
             </table>
         </section>
@@ -1284,7 +1368,7 @@ function buildCertificadoReport_PDF(results, chartImage = '') {
                     </th>
                 </tr>
                 <tr>
-                    <td style="padding: 8px; border: 1px solid #ccc; background-color: #f8f9fa; font-size: 10px;">
+                    <td style="padding: 8px; border: none; font-size: 10px;">
                         ${results.textos_reporte.notas_certificado.map(nota => `<p style="margin-bottom: 5px;">${nota}</p>`).join('')}
                         <p style="margin-top: 10px; padding-top: 8px; border-top: 1px solid #ddd;">
                             ${document.getElementById('puntas_valor').value ? `Se realizó con puntas nuevas.` : ''}
@@ -1348,35 +1432,7 @@ function displayResults(results) {
 
     let certificateHtml = `
         <section class="bg-white p-6 rounded-lg shadow-md border border-gray-200">
-            <!-- Rastreabilidad -->
-            <div class="mb-6">
-                <h3 class="text-lg font-semibold mb-2 text-center bg-red-600 text-white py-1 rounded-t-lg">
-                    Rastreabilidad
-                    <span class="block text-sm font-normal italic">Traceability</span>
-                </h3>
-                <table class="min-w-full border text-center text-xs">
-                    <tbody class="bg-white divide-y divide-gray-200">
-                        <tr class="divide-x divide-gray-200">
-                            <td class="px-2 py-1"><strong>Fecha Recepción:</strong><br><span class="italic text-gray-500">Reception Date:</span></td>
-                            <td class="px-2 py-1">${formatDate(eg.fecha_recepcion)}</td>
-                            <td class="px-2 py-1"><strong>Fecha Calibración:</strong><br><span class="italic text-gray-500">Calibration Date:</span></td>
-                            <td class="px-2 py-1">${formatDate(eg.fecha_calibracion)}</td>
-                            <td class="px-2 py-1"><strong>Certificado:</strong><br><span class="italic text-gray-500">Certificate:</span></td>
-                            <td class="px-2 py-1">${eg.numero_certificado || ''}</td>
-                        </tr>
-                        <tr class="divide-x divide-gray-200">
-                            <td class="px-2 py-1"><strong>Fecha Emisión:</strong><br><span class="italic text-gray-500">Issued Date:</span></td>
-                            <td class="px-2 py-1">${formatDate(eg.fecha_emision)}</td>
-                            <td class="px-2 py-1"><strong>Servicio:</strong><br><span class="italic text-gray-500">Service:</span></td>
-                            <td class="px-2 py-1">${eg.numero_servicio || ''}</td>
-                            <td class="px-2 py-1"><strong>Magnitud evaluada:</strong><br><span class="italic text-gray-500">Evaluated magnitude</span></td>
-                            <td class="px-2 py-1">Volumen</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-
-
+            <h1 class="text-2xl font-bold text-center mb-6">Certificado de Calibración Volumen</h1>
             <!-- Trazabilidad Metrológica -->
             <h3 class="text-lg font-semibold mt-6 mb-2">
                 Trazabilidad Metrológica
