@@ -3,6 +3,7 @@ from flask_cors import CORS
 from weasyprint import HTML
 import calculadora
 import json
+import pathlib
 import os
 from datetime import datetime
 import logging
@@ -101,7 +102,6 @@ def exportar_pdf_ruta():
         service_report_html = data.get('service_report_html')
         certificate_html = data.get('certificate_html')
         medidas_html = data.get('medidas_html')
-        base_url = data.get('base_url')
 
         if not service_report_html or not certificate_html or not medidas_html:
             return jsonify({"error": "No se recibió el contenido HTML para generar el PDF."}), 400
@@ -116,6 +116,11 @@ def exportar_pdf_ruta():
         else: # Por defecto, el certificado
             content_html = certificate_html
             file_name = f"Certificado_{datetime.now().strftime('%d%m%Y%H%M%S')}.pdf"
+
+        # Construir la URL base para los archivos locales en el servidor
+        # Esto es mucho más rápido y fiable que usar una URL HTTP.
+        base_path = pathlib.Path(os.path.abspath(os.path.dirname(__file__)))
+        base_url = base_path.as_uri() + "/"
 
         # Renderizamos la plantilla principal del PDF con el contenido recibido
         rendered_html = render_template(
