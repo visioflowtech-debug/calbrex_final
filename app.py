@@ -102,7 +102,6 @@ def exportar_pdf_ruta():
         service_report_html = data.get('service_report_html')
         certificate_html = data.get('certificate_html')
         medidas_html = data.get('medidas_html')
-
         if not service_report_html or not certificate_html or not medidas_html:
             return jsonify({"error": "No se recibió el contenido HTML para generar el PDF."}), 400
 
