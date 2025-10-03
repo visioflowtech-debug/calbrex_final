@@ -310,77 +310,66 @@ def procesar_todos_los_aforos(data):
         if espec_patron is None or not isinstance(espec_patron, dict):
             espec_patron = {}
         
-        # --- CÁLCULO DE INCERTIDUMBRE (Lógica corregida y unificada) ---
-        # PASO 6: INCERTIDUMBRES ESTÁNDAR u(x)
-        u_R_kg = 2.8867e-8
-        u_C_kg = 7.5e-8
-        u_E_kg = 2.31e-8
-        u_M_kg = math.sqrt(u_R_kg**2 + u_C_kg**2 + u_E_kg**2)
+        # --- CÁLCULO DE INCERTIDUMBRE (Refactorizado según GUM) ---
+
+        # 1. Incertidumbres estándar de las fuentes (u_i)
+        u_cal_balanza_kg = math.sqrt( (2.8867e-8)**2 + (7.5e-8)**2 + (2.31e-8)**2 )
+        u_temp_agua_C = 0.0757
+        u_densidad_agua_kg_m3 = math.sqrt( (-0.2236 * u_temp_agua_C)**2 + (4.15e-4)**2 )
+        u_densidad_aire_kg_m3 = math.sqrt(1.9688e-6)
+        u_densidad_pesa_kg_m3 = (constantes['rho_pesa_n74'] * 0.03) / math.sqrt(12)
+        u_gamma_C_inv = (constantes['alpha_material_pp'] * 0.2) / math.sqrt(12)
+        u_temp_recipiente_C = 0.0786
         
-        u_tA_C = 0.0757
-        d_rhoA_dtA = -0.2236
-        u_CmPA_kg_m3 = 4.15e-4
-        u_rho_A_kg_m3 = math.sqrt((d_rhoA_dtA * u_tA_C)**2 + u_CmPA_kg_m3**2)
-        
-        u_rho_a_kg_m3_sq = 1.9688e-6
-        u_rho_a_kg_m3 = math.sqrt(u_rho_a_kg_m3_sq)
-        
-        rho_B = constantes['rho_pesa_n74']
-        u_rho_B_kg_m3 = (rho_B * 0.03) / math.sqrt(12)
-        
-        gamma = constantes['alpha_material_pp']
-        u_gamma_C = (gamma * 0.2) / math.sqrt(12)
-        
-        tr = promedios_ambientales['temp_agua']
-        u_tr_C = 0.0786
-        
+        # Incertidumbre por repetibilidad (Tipo A)
         volumenes_corregidos_m3 = [v / 1e9 for v in volumenes_corregidos_ul]
         if len(volumenes_corregidos_m3) > 1:
             media_vol = sum(volumenes_corregidos_m3) / len(volumenes_corregidos_m3)
             desv_est_vol = math.sqrt(sum([(v - media_vol)**2 for v in volumenes_corregidos_m3]) / (len(volumenes_corregidos_m3) - 1))
-            u_Crep_m3 = desv_est_vol / math.sqrt(len(volumenes_corregidos_m3))
+            u_repetibilidad_m3 = desv_est_vol / math.sqrt(len(volumenes_corregidos_m3))
         else:
-            u_Crep_m3 = 0
-            
-        u_Cres_m3 = (constantes.get('div_min_valor', 0) / 1e9) / math.sqrt(12)
-        u_Crepro_m3 = 0.23 / 1e9
+            u_repetibilidad_m3 = 0
         
-        # PASO 7: COEFICIENTES DE SENSIBILIDAD cᵢ
+        # Otras incertidumbres (Tipo B)
+        u_resolucion_m3 = (constantes.get('div_min_valor', 0) / 1e9) / math.sqrt(12)
+        u_reproducibilidad_m3 = 0.23 / 1e9
+        
+        # 2. Coeficientes de sensibilidad (c_i)
         V20_prom_m3 = sum(volumenes_corregidos_m3) / len(volumenes_corregidos_m3) if volumenes_corregidos_m3 else 0
         masas_kg = [m / 1000.0 for m in aforo_data['mediciones_masa']]
         masa_aparente_prom_kg = sum(masas_kg) / len(masas_kg) if masas_kg else 0
         
         rho_A = factores['rho_agua']
         rho_a = factores['rho_aire']
+        rho_B = constantes['rho_pesa_n74']
+        gamma = constantes['alpha_material_pp']
+        tr = promedios_ambientales['temp_agua']
         
-        c_Mo = -V20_prom_m3 / masa_aparente_prom_kg if masa_aparente_prom_kg != 0 else 0
-        c_Mi = V20_prom_m3 / masa_aparente_prom_kg if masa_aparente_prom_kg != 0 else 0
+        c_masa = V20_prom_m3 / masa_aparente_prom_kg if masa_aparente_prom_kg != 0 else 0
         c_rho_A = -V20_prom_m3 / (rho_A - rho_a) if (rho_A - rho_a) != 0 else 0
         c_rho_a = V20_prom_m3 * (1/(rho_A - rho_a) - 1/(rho_B - rho_a)) if (rho_A - rho_a) != 0 and (rho_B - rho_a) != 0 else 0
         c_rho_B = V20_prom_m3 * rho_a / (rho_B * (rho_B - rho_a)) if rho_B != 0 and (rho_B - rho_a) != 0 else 0
         c_gamma = -V20_prom_m3 * (tr - 20) / (1 - gamma * (tr - 20)) if (1 - gamma * (tr - 20)) != 0 else 0
         c_tr = -V20_prom_m3 * gamma / (1 - gamma * (tr - 20)) if (1 - gamma * (tr - 20)) != 0 else 0
         
-        # PASO 8: INCERTIDUMBRE COMBINADA u_c(V₂₀)
-        u_y_Mo = c_Mo * u_M_kg
-        u_y_Mi = c_Mi * u_M_kg
-        u_y_rho_A = c_rho_A * u_rho_A_kg_m3
-        u_y_rho_a = c_rho_a * u_rho_a_kg_m3
-        u_y_rho_B = c_rho_B * u_rho_B_kg_m3
-        u_y_gamma = c_gamma * u_gamma_C
-        u_y_tr = c_tr * u_tr_C
-        u_y_Crep = u_Crep_m3      # Coeficiente de sensibilidad es 1
-        u_y_Cres = u_Cres_m3      # Coeficiente de sensibilidad es 1
-        u_y_Crepro = u_Crepro_m3  # Coeficiente de sensibilidad es 1
+        # 3. Contribuciones a la incertidumbre (u_i(y) = c_i * u(x_i))
+        u_y_cal_balanza = c_masa * u_cal_balanza_kg
+        u_y_densidad_agua = c_rho_A * u_densidad_agua_kg_m3
+        u_y_densidad_aire = c_rho_a * u_densidad_aire_kg_m3
+        u_y_densidad_pesa = c_rho_B * u_densidad_pesa_kg_m3
+        u_y_gamma = c_gamma * u_gamma_C_inv
+        u_y_temp_recipiente = c_tr * u_temp_recipiente_C
         
-        u_c_sq = (u_y_Mo**2 + u_y_Mi**2 + u_y_rho_A**2 + u_y_rho_a**2 + u_y_rho_B**2 +
-                  u_y_gamma**2 + u_y_tr**2 + u_y_Crep**2 + u_y_Cres**2 + u_y_Crepro**2)
+        # 4. Incertidumbre combinada (u_c)
+        u_c_sq = (u_y_cal_balanza**2 + u_y_densidad_agua**2 + u_y_densidad_aire**2 +
+                  u_y_densidad_pesa**2 + u_y_gamma**2 + u_y_temp_recipiente**2 +
+                  u_repetibilidad_m3**2 + u_resolucion_m3**2 + u_reproducibilidad_m3**2)
         u_c_m3 = math.sqrt(u_c_sq)
         
-        # PASO 9: INCERTIDUMBRE EXPANDIDA U
+        # 5. Incertidumbre expandida (U)
         v_rep = len(masas_kg) - 1 if len(masas_kg) > 1 else float('inf')
-        if u_c_m3 > 0 and v_rep != float('inf') and u_y_Crep != 0:
-            denominador_v_eff = (u_y_Crep**4) / v_rep
+        if u_c_m3 > 0 and v_rep != float('inf') and u_repetibilidad_m3 != 0:
+            denominador_v_eff = (u_repetibilidad_m3**4) / v_rep
             v_eff = (u_c_m3**4) / denominador_v_eff if denominador_v_eff > 0 else float('inf')
         else:
             v_eff = float('inf')
@@ -390,17 +379,17 @@ def procesar_todos_los_aforos(data):
         
         if debug_mode:
             print(f"\n\n=== DIAGNÓSTICO UNIFICADO CANAL {i} ===")
-            print("\n--- PASO 6: INCERTIDUMBRES ESTÁNDAR (u_i) ---")
-            print(f"  u(Masa): {u_M_kg:.6e} kg")
-            print(f"  u(Temp Agua): {u_tA_C:.6f} °C")
-            print(f"  u(Densidad Agua): {u_rho_A_kg_m3:.6f} kg/m³")
-            print(f"  u(Densidad Aire): {u_rho_a_kg_m3:.6f} kg/m³")
-            print(f"  u(Densidad Pesa): {u_rho_B_kg_m3:.6f} kg/m³")
-            print(f"  u(Gamma): {u_gamma_C:.6e} °C⁻¹")
-            print(f"  u(Temp Recipiente): {u_tr_C:.6f} °C")
-            print(f"  u(Repetibilidad): {u_Crep_m3:.6e} m³")
-            print(f"  u(Resolución): {u_Cres_m3:.6e} m³")
-            print(f"  u(Reproducibilidad): {u_Crepro_m3:.6e} m³")
+            print("\n--- 1. INCERTIDUMBRES ESTÁNDAR (u_i) ---")
+            print(f"  u(Calibración Balanza): {u_cal_balanza_kg:.6e} kg")
+            print(f"  u(Temp Agua): {u_temp_agua_C:.6f} °C")
+            print(f"  u(Densidad Agua): {u_densidad_agua_kg_m3:.6f} kg/m³")
+            print(f"  u(Densidad Aire): {u_densidad_aire_kg_m3:.6f} kg/m³")
+            print(f"  u(Densidad Pesa): {u_densidad_pesa_kg_m3:.6f} kg/m³")
+            print(f"  u(Gamma): {u_gamma_C_inv:.6e} °C⁻¹")
+            print(f"  u(Temp Recipiente): {u_temp_recipiente_C:.6f} °C")
+            print(f"  u(Repetibilidad): {u_repetibilidad_m3:.6e} m³")
+            print(f"  u(Resolución): {u_resolucion_m3:.6e} m³")
+            print(f"  u(Reproducibilidad): {u_reproducibilidad_m3:.6e} m³")
 
             print("\n--- VALORES INTERMEDIOS CLAVE ---")
             print(f"  Densidad del Agua (ρ_A) calculada: {rho_A:.4f} kg/m³")
@@ -408,12 +397,12 @@ def procesar_todos_los_aforos(data):
             print(f"  Factor Flotación (Z1) calculado: {factores['flotacion']:.6f}")
             print(f"  Factor Dilatación (Z3) calculado: {factores['dilatacion']:.6f}")
             
-            print("\n--- PASO 7: COEFICIENTES DE SENSIBILIDAD (c_i) ---")
-            print(f"  c(Masa): {c_Mi:.6f} m³/kg")
+            print("\n--- 2. COEFICIENTES DE SENSIBILIDAD (c_i) ---")
+            print(f"  c(Masa): {c_masa:.6f} m³/kg")
             print(f"  c(Densidad Agua): {c_rho_A:.6e} m³/ (kg/m³)")
             # ... (se pueden añadir más si es necesario)
 
-            print("\n--- PASO 8 y 9: RESULTADOS ---")
+            print("\n--- 4 y 5. RESULTADOS ---")
             print(f"  Incertidumbre Combinada (u_c): {u_c_m3 * 1e9:.6f} µL")
             print(f"  Grados de Libertad (v_eff): {v_eff:.2f}")
             print(f"  Factor de Cobertura (k): {k:.4f}")
@@ -429,8 +418,9 @@ def procesar_todos_los_aforos(data):
         # Calcular el error de medida en porcentaje
         # Se usa el valor nominal del Aforo 3 como divisor para todos, según la fórmula del Excel.
         error_porcentaje = 0
+        error_medida_redondeado = round(error_medida, 2) # Redondeo intermedio para coincidir con Excel
         if valor_nominal_ref_porcentaje != 0:
-            error_porcentaje = abs(error_medida / valor_nominal_ref_porcentaje) * 100
+            error_porcentaje = abs(error_medida_redondeado / valor_nominal_ref_porcentaje) * 100
 
         if debug_mode:
             print(f"\n--- CÁLCULO ERROR % CANAL {i} ---")

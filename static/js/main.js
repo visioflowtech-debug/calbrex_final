@@ -528,8 +528,7 @@ async function handleExportPdf(reportType) {
                 report_type: reportType,
                 service_report_html: serviceReportHtml,
                 certificate_html: certificateHtml,
-                medidas_html: medidasHtml,
-                base_url: window.location.origin + '/'
+                medidas_html: medidasHtml
             })
         });
 
