@@ -147,4 +147,6 @@ if __name__ == '__main__':
     app.logger.addHandler(file_handler)
     app.logger.setLevel(logging.INFO)
     app.logger.info('*** Servidor de Calculadora Iniciado ***')
-    app.run(debug=True)
+    # Para producción, el modo debug debe estar desactivado.
+    # El servidor WSGI de PythonAnywhere se encargará de ejecutar la app.
+    app.run(debug=False)

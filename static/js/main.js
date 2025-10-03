@@ -638,11 +638,9 @@ function buildMedidasHeader(results) {
         const headerCellStyle = `border: 1px solid black; padding: 2px; text-align: center; color: white; ${fontSizeStyle}`;
 
         const diagonalLine = !showData ? /*html*/`
-            <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; overflow: hidden;">
-                <svg width="100%" height="100%" style="position: absolute; top: 0; left: 0;">
-                    <line x1="0" y1="0" x2="100%" y2="100%" stroke="black" stroke-width="1"/>
-                </svg>
-            </div>
+            <svg viewBox="0 0 100 100" preserveAspectRatio="none" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none;">
+                <line x1="0" y1="0" x2="100" y2="100" stroke="black" stroke-width="0.3" vector-effect="non-scaling-stroke"/>
+            </svg>
         ` : '';
 
         return /*html*/`
@@ -656,7 +654,7 @@ function buildMedidasHeader(results) {
                         <td style="border: none; padding: 2px 4px; color: white;"><strong>PASOS:</strong></td>
                     </tr>
                 </table>
-                <div style="position: relative;">
+                <div style="position: relative; min-height: 200px;">
                     ${diagonalLine}
                     <table style="width: 100%; border-collapse: collapse; ${fontSizeStyle} line-height: 1.2; table-layout: fixed;">
                         <colgroup>
