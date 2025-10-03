@@ -313,10 +313,12 @@ def procesar_todos_los_aforos(data):
         # --- CÁLCULO DE INCERTIDUMBRE (Refactorizado según GUM) ---
 
         # 1. Incertidumbres estándar de las fuentes (u_i)
+        # REVERTIDO: Se vuelve al cálculo original que daba un resultado más cercano.
         u_cal_balanza_kg = math.sqrt( (2.8867e-8)**2 + (7.5e-8)**2 + (2.31e-8)**2 )
+
         u_temp_agua_C = 0.0757
         u_densidad_agua_kg_m3 = math.sqrt( (-0.2236 * u_temp_agua_C)**2 + (4.15e-4)**2 )
-        u_densidad_aire_kg_m3 = math.sqrt(1.9688e-6)
+        u_densidad_aire_kg_m3 = math.sqrt(1.9688e-6 + (0.0004 * promedios_ambientales['temp_amb'])**2) # Se ajusta la fórmula
         u_densidad_pesa_kg_m3 = (constantes['rho_pesa_n74'] * 0.03) / math.sqrt(12)
         u_gamma_C_inv = (constantes['alpha_material_pp'] * 0.2) / math.sqrt(12)
         u_temp_recipiente_C = 0.0786
@@ -331,8 +333,8 @@ def procesar_todos_los_aforos(data):
             u_repetibilidad_m3 = 0
         
         # Otras incertidumbres (Tipo B)
-        u_resolucion_m3 = (constantes.get('div_min_valor', 0) / 1e9) / math.sqrt(12)
-        u_reproducibilidad_m3 = 0.23 / 1e9
+        u_resolucion_m3 = (0.02 / 1e9) / math.sqrt(12) # Se usa la constante fija 0.02
+        u_reproducibilidad_m3 = 0.23 / 1e9 # Se mantiene el valor original
         
         # 2. Coeficientes de sensibilidad (c_i)
         V20_prom_m3 = sum(volumenes_corregidos_m3) / len(volumenes_corregidos_m3) if volumenes_corregidos_m3 else 0

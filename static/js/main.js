@@ -1554,7 +1554,7 @@ function displayResults(results) {
             </h3>
 
             <p class="text-sm text-gray-600 mb-4 p-4 border-l-4 border-blue-500 bg-blue-50">
-                ${eg.introduccion_certificado}
+                ${results.textos_reporte.introduccion_certificado}
             </p>
 
             <!-- Tabla de Resultados del Certificado -->
