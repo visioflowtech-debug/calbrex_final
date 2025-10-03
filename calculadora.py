@@ -434,7 +434,7 @@ def procesar_todos_los_aforos(data):
         resultados_por_aforo.append({
             "valor_nominal": aforo_data['valor_nominal'],
             "promedio_volumen_ul": promedio_volumen,
-            "error_medida_ul": error_medida,
+            "error_medida_ul": error_medida_redondeado,
             "mediciones_volumen_ul": volumenes_corregidos_ul,
             "error_medida_porcentaje": error_porcentaje,
             "incertidumbre_expandida": incertidumbre,

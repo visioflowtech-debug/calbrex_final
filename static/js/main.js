@@ -1140,7 +1140,7 @@ function buildServicioReport_HTML(results) {
                     ${results.aforos.map((a, index) => `
                         <tr class="divide-x divide-gray-200">
                             <td class="px-2 py-2">${index + 1}</td>
-                            <td class="px-2 py-2">${a.valor_nominal.toFixed(2)}</td>
+                            <td class="px-2 py-2">${a.valor_nominal.toFixed(0)}</td>
                             <td class="px-2 py-2">${a.promedio_volumen_ul.toFixed(2)}</td>
                             <td class="px-2 py-2 font-medium ${a.error_medida_ul >= 0 ? 'text-blue-600' : 'text-red-600'}">
                                 ${a.error_medida_ul.toFixed(2)}
@@ -1406,7 +1406,7 @@ function buildCertificadoReport_PDF(results, chartImage = '') {
                     ${results.aforos.map((aforo, index) => `
                         <tr>
                             <td style="border: 1px solid #999; padding: 4px;">${index + 1}</td>
-                            <td style="border: 1px solid #999; padding: 4px;">${aforo.valor_nominal.toFixed(2).replace('.', ',')}</td>
+                            <td style="border: 1px solid #999; padding: 4px;">${aforo.valor_nominal.toFixed(0).replace('.', ',')}</td>
                             <td style="border: 1px solid #999; padding: 4px;">${aforo.promedio_volumen_ul.toFixed(2).replace('.', ',')}</td>
                             <td style="border: 1px solid #999; padding: 4px;">${aforo.error_medida_ul.toFixed(3).replace('.', ',')}</td>
                             <td style="border: 1px solid #999; padding: 4px;">${aforo.error_medida_porcentaje !== null ? aforo.error_medida_porcentaje.toFixed(4).replace('.', ',') : 'N/A'}</td>
@@ -1573,7 +1573,7 @@ function displayResults(results) {
                         ${results.aforos.map((aforo, index) => `
                             <tr class="divide-x divide-gray-200">
                                 <td class="px-2 py-2">${index + 1}</td>
-                                <td class="px-2 py-2">${aforo.valor_nominal.toFixed(2)}</td>
+                                <td class="px-2 py-2">${aforo.valor_nominal.toFixed(0)}</td>
                                 <td class="px-2 py-2">${aforo.promedio_volumen_ul.toFixed(2)}</td>
                                 <td class="px-2 py-2 font-medium ${aforo.error_medida_ul >= 0 ? 'text-blue-600' : 'text-red-600'}">
                                     ${aforo.error_medida_ul.toFixed(2)}
