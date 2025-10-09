@@ -349,7 +349,7 @@ function collectFormData() {
             auxiliar_ca: document.getElementById('auxiliar_ca').value,
             realizo_calibracion: document.getElementById('realizo_calibracion_selector').value, // Firma 1
             autorizo_calibracion: document.getElementById('autorizo_calibracion_selector').value, // Firma 2
-            debug_mode: true, // <-- AÑADIDO: Activa el modo de diagnóstico en el backend
+            debug_mode: false, // <-- DESACTIVADO: Se apaga para producción
             mantenimientos: Array.from(document.querySelectorAll('input[name="mantenimiento"]:checked')).map(el => el.value),
             condiciones_iniciales: {
                 promedio1: parseFloat(document.getElementById('inicial-promedio-1').value),
